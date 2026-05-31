@@ -183,6 +183,11 @@ def asset_links():
       "namespace": "android_app",
       "package_name": "com.starwish.tubeboxs",
       "sha256_cert_fingerprints": [
+          "C5:A7:66:3C:74:1B:A4:4F:F8:43:0B:6F:B3:2A:56:16:25:07:F8:A2:8A:EB:DC:4C:79:E6:41:35:6E:AF:96:41",
+          "58:E0:0A:EB:35:E1:2F:37:B0:6B:AD:B1:19:27:65:E2:9B:B6:2A:C9:02:E8:68:B1:5E:D0:12:20:B1:C4:51:C1",
+          "C5:A7:66:3C:74:1B:A4:4F:F8:43:0B:6F:B3:2A:56:16:25:07:F8:A2:8A:EB:DC:4C:79:E6:41:35:6E:AF:96:41",
+          "C5:A7:66:3C:74:1B:A4:4F:F8:43:0B:6F:B3:2A:56:16:25:07:F8:A2:8A:EB:DC:4C:79:E6:41:35:6E:AF:96:41",
+          "78:A4:E1:E6:86:46:47:14:07:C1:CE:66:67:B7:A4:0A:46:95:BE:2A",
         "24:5E:C1:5F:01:10:24:30:30:D6:F9:46:A8:C8:88:BA:C7:4F:11:87:E7:67:AD:1C:CE:B1:3D:89:6C:AA:68:F5"
       ]
     }
