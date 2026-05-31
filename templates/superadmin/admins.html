@@ -9,6 +9,20 @@
         </div>
     </div>
 
+    <!-- Search & Filter -->
+    <div class="row mb-4 g-2">
+        <div class="col-md-8">
+            <input id="searchInput" class="form-control bg-secondary text-white border-secondary" placeholder="Search admins by email or ID...">
+        </div>
+        <div class="col-md-4">
+            <select id="sortSelect" class="form-select bg-secondary text-white border-secondary">
+                <option value="newest">Newest First</option>
+                <option value="earnings">Most Earnings</option>
+                <option value="balance">Highest Balance</option>
+            </select>
+        </div>
+    </div>
+
     <!-- Flash Messages -->
     {% with messages = get_flashed_messages() %}
         {% if messages %}
@@ -34,7 +48,7 @@
                 <tbody class="border-top-0">
                     {% if admins %}
                         {% for admin in admins %}
-                        <tr>
+                        <tr class="admin-row" data-id="{{ admin.id }}" data-email="{{ admin.email | lower }}" data-earnings="{{ admin.totalEarnings }}" data-balance="{{ admin.balance }}">
                             <td class="py-3 px-4 text-white">#{{ admin.id }}</td>
                             <td class="py-3 px-4">
                                 <div class="fw-bold text-white">{{ admin.email }}</div>
@@ -126,5 +140,28 @@
             alert("Error connecting to server.");
         }
     }
+
+    document.getElementById("searchInput").addEventListener("keyup", function () {
+        const value = this.value.toLowerCase();
+        document.querySelectorAll(".admin-row").forEach(el => {
+            const email = el.getAttribute("data-email");
+            const id = el.getAttribute("data-id");
+            el.style.display = (email.includes(value) || id.includes(value)) ? "" : "none";
+        });
+    });
+
+    document.getElementById("sortSelect").addEventListener("change", function() {
+        const val = this.value;
+        const container = document.querySelector("tbody");
+        const items = Array.from(container.getElementsByClassName("admin-row"));
+        
+        items.sort((a, b) => {
+            if (val === 'earnings') return parseFloat(b.dataset.earnings) - parseFloat(a.dataset.earnings);
+            if (val === 'balance') return parseFloat(b.dataset.balance) - parseFloat(a.dataset.balance);
+            return parseInt(b.dataset.id) - parseInt(a.dataset.id);
+        });
+        
+        items.forEach(item => container.appendChild(item));
+    });
 </script>
 {% endblock %}

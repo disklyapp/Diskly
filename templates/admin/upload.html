@@ -43,8 +43,13 @@
                                name="video"
                                id="videoInput"
                                class="form-control form-control-lg"
-                               onchange="autoFillTitle(this)"
+                               accept="video/*"
+                               onchange="handleFileSelect(this)"
                                required>
+                               
+                        <div id="fileSelectedDisplay" class="text-success mt-3 fw-bold d-none" style="word-break: break-all;">
+                            <i class="fa-solid fa-check-circle me-1"></i> <span id="fileNameSpan"></span>
+                        </div>
 
                     </div>
 
@@ -102,12 +107,8 @@
                            class="form-control form-control-lg mb-4"
                            placeholder="Enter video title (defaults to file name)">
 
-                    <!-- Description -->
-                    <label class="fw-semibold mb-2">Description</label>
-                    <textarea name="description"
-                              rows="6"
-                              class="form-control mb-4"
-                              placeholder="Write short description..."></textarea>
+                    <!-- Description Removed per user request -->
+                    <input type="hidden" name="description" value="">
 
                     <!-- Flash Messages -->
                     {% with messages = get_flashed_messages() %}
@@ -121,7 +122,7 @@
                     {% endwith %}
 
                     <div class="d-grid mt-2">
-                        <button type="submit" id="uploadBtn" class="btn btn-success btn-lg rounded-4">
+                        <button type="submit" id="uploadBtn" class="btn btn-secondary btn-lg rounded-4 transition-all">
                             <i class="fa-solid fa-cloud-arrow-up me-2"></i>
                             Upload Video
                         </button>
@@ -182,13 +183,32 @@
     const token = "{{ token }}";
     const apiBaseUrl = "{{ api_base_url }}";
 
-    function autoFillTitle(input) {
+    function handleFileSelect(input) {
         const titleInput = document.getElementById('titleInput');
-        if (input.files.length > 0 && !titleInput.value) {
+        const uploadBtn = document.getElementById('uploadBtn');
+        const display = document.getElementById('fileSelectedDisplay');
+        const nameSpan = document.getElementById('fileNameSpan');
+
+        if (input.files.length > 0) {
             let filename = input.files[0].name;
-            // remove extension
-            filename = filename.replace(/\.[^/.]+$/, "");
-            titleInput.value = filename;
+            
+            // Show filename UI
+            nameSpan.innerText = filename;
+            display.classList.remove('d-none');
+
+            // Change button color to indicate readiness
+            uploadBtn.classList.remove('btn-secondary');
+            uploadBtn.classList.add('btn-primary-green'); // Make it vibrant green
+
+            // Auto-fill title if empty
+            if (!titleInput.value) {
+                let nameWithoutExt = filename.replace(/\.[^/.]+$/, "");
+                titleInput.value = nameWithoutExt;
+            }
+        } else {
+            display.classList.add('d-none');
+            uploadBtn.classList.remove('btn-primary-green');
+            uploadBtn.classList.add('btn-secondary');
         }
     }
 
