@@ -23,10 +23,15 @@
 <nav class="navbar navbar-expand-lg navbar-dark bg-dark border-bottom border-secondary px-4">
     
     <!-- Left Logo -->
-    <a class="navbar-brand fw-bold fs-4 d-flex align-items-center gap-2" href="/">
-        <img src="{{ url_for('static', filename='images/logo.png') }}" alt="Diskly Logo" style="height: 32px;">
-        <span>Disk<span class="text-highlight">ly</span></span>
-    </a>
+    <div class="d-flex align-items-center gap-2">
+        <button class="btn d-lg-none text-white p-1" type="button" data-bs-toggle="offcanvas" data-bs-target="#sidebarMenu" aria-controls="sidebarMenu" style="border:none; background:transparent;">
+            <i class="fa-solid fa-bars fs-4"></i>
+        </button>
+        <a class="navbar-brand fw-bold fs-4 d-flex align-items-center gap-2 m-0" href="/">
+            <img src="{{ url_for('static', filename='images/logo.png') }}" alt="Diskly Logo" style="height: 32px;">
+            <span>Disk<span class="text-highlight">ly</span></span>
+        </a>
+    </div>
 
     <!-- Right Menu -->
     <div class="d-flex align-items-center gap-3">
@@ -45,13 +50,18 @@
 <div class="d-flex">
 
     <!-- SIDEBAR -->
-    <div class="bg-dark text-white p-3 border-end border-secondary"
-         style="width:250px; min-height:100vh;">
+    <div class="offcanvas-lg offcanvas-start bg-dark text-white border-end border-secondary"
+         tabindex="-1" id="sidebarMenu" style="width:250px; min-height:100vh;">
 
+         <div class="offcanvas-header d-lg-none border-bottom border-secondary mb-3">
+             <h5 class="offcanvas-title fw-bold" style="color: var(--text-color);">Menu</h5>
+             <button type="button" class="btn-close" style="filter: invert(1);" data-bs-dismiss="offcanvas" data-bs-target="#sidebarMenu" aria-label="Close"></button>
+         </div>
 
-        <ul class="nav flex-column">
+         <div class="offcanvas-body p-3 pt-0 pt-lg-3 flex-column">
+            <ul class="nav flex-column w-100">
 
-            <li class="nav-item py-2 border-bottom border-secondary">
+                <li class="nav-item py-2 border-bottom border-secondary">
                 <a href="/superadmin/dashboard" class="nav-link text-white px-0">
                     <i class="fa-solid fa-chart-pie me-2 text-success"></i>
                     Dashboard
@@ -94,10 +104,11 @@
             </li>
 
         </ul>
+        </div>
     </div>
 
     <!-- MAIN CONTENT -->
-    <div class="p-4 w-100">
+    <div class="p-4 w-100" style="overflow-x: hidden; max-width: 100vw;">
         {% block content %}{% endblock %}
     </div>
 

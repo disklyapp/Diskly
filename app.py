@@ -181,7 +181,7 @@ def asset_links():
     "relation": ["delegate_permission/common.handle_all_urls"],
     "target": {
       "namespace": "android_app",
-      "package_name": "com.starwish.tubeboxs",
+      "package_name": "com.starwish.diskly",
       "sha256_cert_fingerprints": [
           "C5:A7:66:3C:74:1B:A4:4F:F8:43:0B:6F:B3:2A:56:16:25:07:F8:A2:8A:EB:DC:4C:79:E6:41:35:6E:AF:96:41",
           "58:E0:0A:EB:35:E1:2F:37:B0:6B:AD:B1:19:27:65:E2:9B:B6:2A:C9:02:E8:68:B1:5E:D0:12:20:B1:C4:51:C1",
