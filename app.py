@@ -33,7 +33,12 @@ def page_not_found(e):
 @app.route('/')
 def home():
     return render_template("index.html")
-
+@app.route("/app-ads.txt")
+def app_ads():
+    return Response(
+        "google.com, pub-2241901350003769, DIRECT, f08c47fec0942fa0",
+        mimetype="text/plain"
+    )
 @app.route('/admin/upload', methods=['GET'])
 def upload():
     if 'token' not in session:
