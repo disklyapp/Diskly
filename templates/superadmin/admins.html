@@ -2,10 +2,15 @@
 
 {% block content %}
 <div class="container-fluid py-4">
-    <div class="d-flex justify-content-between align-items-center mb-4">
+    <div class="d-flex justify-content-between align-items-md-center flex-column flex-md-row gap-3 mb-4">
         <div>
             <h2 class="fw-bold text-white mb-1">Admin Management</h2>
             <p class="text-light opacity-75 small mb-0">View and manage all registered admins</p>
+        </div>
+        <div>
+            <a href="https://apps.admob.com/" target="_blank" class="btn btn-warning rounded-1 px-4 py-2.5 fw-bold shadow-sm d-inline-flex align-items-center gap-2">
+                <i class="fa-solid fa-square-poll-vertical"></i> Go to AdMob
+            </a>
         </div>
     </div>
 
@@ -71,7 +76,15 @@
                             </td>
                             <td class="py-3 px-4 text-end">
                                 <div class="d-flex justify-content-end gap-2">
-                                    <button class="btn btn-sm btn-outline-warning rounded-pill px-3" onclick="openEditAdminModal({{ admin | tojson | safe }})">Edit</button>
+                                    <button class="btn btn-sm btn-outline-warning rounded-pill px-3" 
+                                            data-id="{{ admin.id }}"
+                                            data-email="{{ admin.email }}"
+                                            data-name="{{ admin.name or '' }}"
+                                            data-balance="{{ admin.balance }}"
+                                            data-daily="{{ admin.dailyUploadLimit }}"
+                                            data-monthly="{{ admin.monthlyUploadLimit }}"
+                                            data-active="{{ 'true' if admin.isActive else 'false' }}"
+                                            onclick="openEditAdminModal(this)">Edit</button>
                                     {% if admin.isActive %}
                                         <button class="btn btn-sm btn-outline-danger px-3 rounded-pill" onclick="toggleStatus({{ admin.id }}, false)">Disable</button>
                                     {% else %}
@@ -142,14 +155,14 @@
 <script>
     let editAdminModalInstance = null;
 
-    function openEditAdminModal(admin) {
-        document.getElementById("editAdminId").value = admin.id;
-        document.getElementById("editAdminEmail").value = admin.email;
-        document.getElementById("editAdminName").value = admin.name || "";
-        document.getElementById("editAdminBalance").value = admin.balance;
-        document.getElementById("editAdminDaily").value = admin.dailyUploadLimit;
-        document.getElementById("editAdminMonthly").value = admin.monthlyUploadLimit;
-        document.getElementById("editAdminStatus").value = admin.isActive ? "true" : "false";
+    function openEditAdminModal(btn) {
+        document.getElementById("editAdminId").value = btn.getAttribute("data-id");
+        document.getElementById("editAdminEmail").value = btn.getAttribute("data-email");
+        document.getElementById("editAdminName").value = btn.getAttribute("data-name") || "";
+        document.getElementById("editAdminBalance").value = btn.getAttribute("data-balance");
+        document.getElementById("editAdminDaily").value = btn.getAttribute("data-daily");
+        document.getElementById("editAdminMonthly").value = btn.getAttribute("data-monthly");
+        document.getElementById("editAdminStatus").value = btn.getAttribute("data-active") === "true" ? "true" : "false";
         
         editAdminModalInstance = new bootstrap.Modal(document.getElementById('editAdminModal'));
         editAdminModalInstance.show();

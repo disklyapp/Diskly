@@ -15,6 +15,32 @@
 
     <!-- Custom CSS -->
     <link rel="stylesheet" href="{{ url_for('static',filename='css/style.css') }}?v=1.1">
+    <style>
+        .sidebar-section-header {
+            font-size: 0.7rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            color: #888888;
+            padding: 8px 0 4px 5px;
+            margin-top: 15px;
+            margin-bottom: 5px;
+            list-style: none;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        }
+        .sidebar-nav-item .nav-link {
+            padding: 8px 12px;
+            border-radius: 8px;
+            transition: all 0.2s ease;
+            font-size: 0.9rem;
+            display: flex;
+            align-items: center;
+        }
+        .sidebar-nav-item .nav-link:hover {
+            background: rgba(34, 197, 94, 0.1);
+            color: var(--primary-accent) !important;
+        }
+    </style>
 </head>
 
 <body>
@@ -38,12 +64,17 @@
         <button class="theme-toggle-btn" id="theme-toggle" aria-label="Toggle Theme">
             <i class="fa-solid fa-moon"></i>
         </button>
+        <!-- AdMob Button in Header -->
+        <a href="https://apps.admob.com/" target="_blank" class="btn btn-sm btn-warning rounded-1 px-3 fw-bold shadow-sm d-flex align-items-center gap-1">
+            <i class="fa-solid fa-chart-simple"></i> Go to AdMob
+        </a>
         <!-- Desktop Nav -->
         <div class="d-none d-lg-flex align-items-center gap-3">
             <a href="/superadmin/logout" class="btn btn-sm btn-danger px-3">
                 <i class="fa-solid fa-right-from-bracket me-1"></i>Logout
             </a>
         </div>
+    </div>
 </nav>
 
 
@@ -61,64 +92,76 @@
          <div class="offcanvas-body p-3 pt-0 pt-lg-3 flex-column">
             <ul class="nav flex-column w-100">
 
-                <li class="nav-item py-2 border-bottom border-secondary">
-                <a href="/superadmin/dashboard" class="nav-link text-white px-0">
-                    <i class="fa-solid fa-chart-pie me-2 text-success"></i>
-                    Dashboard
-                </a>
-            </li>
+                <!-- GENERAL SECTION -->
+                <li class="sidebar-section-header m-0" style="margin-top: 0px !important;">General</li>
+                <li class="nav-item sidebar-nav-item py-1">
+                    <a href="/superadmin/dashboard" class="nav-link text-white">
+                        <i class="fa-solid fa-chart-pie me-2 text-success"></i>
+                        Dashboard
+                    </a>
+                </li>
+                <li class="nav-item sidebar-nav-item py-1">
+                    <a href="/superadmin/logs" class="nav-link text-white">
+                        <i class="fa-solid fa-receipt me-2 text-success"></i>
+                        Activity Logs
+                    </a>
+                </li>
 
-            <li class="nav-item py-2 border-bottom border-secondary">
-                <a href="/superadmin/videos" class="nav-link text-white px-0">
-                    <i class="fa-solid fa-video me-2 text-danger"></i>
-                    Global Videos
-                </a>
-            </li>
+                <!-- MANAGEMENT SECTION -->
+                <li class="sidebar-section-header">Management</li>
+                <li class="nav-item sidebar-nav-item py-1">
+                    <a href="/superadmin/videos" class="nav-link text-white">
+                        <i class="fa-solid fa-video me-2 text-danger"></i>
+                        Global Videos
+                    </a>
+                </li>
+                <li class="nav-item sidebar-nav-item py-1">
+                    <a href="/superadmin/reported-videos" class="nav-link text-white">
+                        <i class="fa-solid fa-flag me-2 text-danger"></i>
+                        Reported Videos
+                    </a>
+                </li>
+                <li class="nav-item sidebar-nav-item py-1">
+                    <a href="/superadmin/admins" class="nav-link text-white">
+                        <i class="fa-solid fa-users me-2 text-primary"></i>
+                        Manage Admins
+                    </a>
+                </li>
 
-            <li class="nav-item py-2 border-bottom border-secondary">
-                <a href="/superadmin/reported-videos" class="nav-link text-white px-0">
-                    <i class="fa-solid fa-flag me-2 text-danger"></i>
-                    Reported Videos
-                </a>
-            </li>
+                <!-- FINANCE & SYSTEM SECTION -->
+                <li class="sidebar-section-header">Finance & System</li>
+                <li class="nav-item sidebar-nav-item py-1">
+                    <a href="/superadmin/payouts" class="nav-link text-white">
+                        <i class="fa-solid fa-money-bill-wave me-2 text-warning"></i>
+                        Payout Requests
+                    </a>
+                </li>
+                <li class="nav-item sidebar-nav-item py-1">
+                    <a href="/superadmin/settings" class="nav-link text-white">
+                        <i class="fa-solid fa-gear me-2 text-info"></i>
+                        System Settings
+                    </a>
+                </li>
 
-            <li class="nav-item py-2 border-bottom border-secondary">
-                <a href="/superadmin/admins" class="nav-link text-white px-0">
-                    <i class="fa-solid fa-users me-2 text-primary"></i>
-                    Manage Admins
-                </a>
-            </li>
+                <!-- COMMUNICATION SECTION -->
+                <li class="sidebar-section-header">Communication</li>
+                <li class="nav-item sidebar-nav-item py-1">
+                    <a href="/superadmin/notifications" class="nav-link text-white">
+                        <i class="fa-solid fa-bell me-2 text-warning"></i>
+                        Send Notifications
+                    </a>
+                </li>
 
-            <li class="nav-item py-2 border-bottom border-secondary">
-                <a href="/superadmin/settings" class="nav-link text-white px-0">
-                    <i class="fa-solid fa-gear me-2 text-info"></i>
-                    System Settings
-                </a>
-            </li>
+                <!-- LOGOUT -->
+                <li class="nav-item sidebar-nav-item py-1 border-top border-secondary pt-3 mt-3">
+                    <a href="/superadmin/logout" class="nav-link text-white">
+                        <i class="fa-solid fa-right-from-bracket me-2 text-light"></i>
+                        Logout
+                    </a>
+                </li>
 
-            <li class="nav-item py-2 border-bottom border-secondary">
-                <a href="/superadmin/payouts" class="nav-link text-white px-0">
-                    <i class="fa-solid fa-money-bill-wave me-2 text-warning"></i>
-                    Payout Requests
-                </a>
-            </li>
-
-            <li class="nav-item py-2 border-bottom border-secondary">
-                <a href="/superadmin/logs" class="nav-link text-white px-0">
-                    <i class="fa-solid fa-receipt me-2 text-success"></i>
-                    Activity Logs
-                </a>
-            </li>
-
-            <li class="nav-item py-2">
-                <a href="/superadmin/logout" class="nav-link text-white px-0">
-                    <i class="fa-solid fa-right-from-bracket me-2 text-light"></i>
-                    Logout
-                </a>
-            </li>
-
-        </ul>
-        </div>
+            </ul>
+         </div>
     </div>
 
     <!-- MAIN CONTENT -->

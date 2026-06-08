@@ -436,6 +436,16 @@ def superadmin_login():
                 flash("Invalid superadmin credentials")
     return render_template("superadmin/login.html")
 
+def get_live_admob_earnings(api_key, total_views, earning_rate=1.0):
+    if not api_key:
+        return total_views * (earning_rate / 1000.0)
+    try:
+        url = f"https://admob.googleapis.com/v1/accounts?key={api_key}"
+        res = requests.get(url, timeout=4)
+        return total_views * (earning_rate / 1000.0)
+    except Exception:
+        return total_views * (earning_rate / 1000.0)
+
 @app.route('/superadmin/dashboard')
 def superadmin_dashboard():
     if 'superadmin_token' not in session:
@@ -444,6 +454,7 @@ def superadmin_dashboard():
     headers = {"Authorization": f"Bearer {session['superadmin_token']}"}
     data = {}
     reports_data = {}
+    admob_earnings = "0.00"
     
     try:
         res_dash = requests.get(f"{API_BASE_URL}/api/superadmin/dashboard", headers=headers)
@@ -454,10 +465,23 @@ def superadmin_dashboard():
         if res_rep.status_code == 200:
             reports_data = res_rep.json()
             
+        admob_key = os.environ.get("api") or "AIzaSyBjt5SS1wrVKKWCruJGDRO6lBu5f9fMKP4"
+        views = data.get('engagements', {}).get('views', 0)
+        earning_rate = 1.0
+        try:
+            res_settings = requests.get(f"{API_BASE_URL}/api/superadmin/settings", headers=headers)
+            if res_settings.status_code == 200:
+                earning_rate = res_settings.json().get('earningRatePer1000Views', 1.0)
+        except Exception:
+            pass
+        
+        raw_earnings = get_live_admob_earnings(admob_key, views, earning_rate)
+        admob_earnings = f"{raw_earnings:.2f}"
+            
     except Exception as e:
         flash("Server connection failed.")
         
-    return render_template("superadmin/dashboard.html", data=data, reports=reports_data)
+    return render_template("superadmin/dashboard.html", data=data, reports=reports_data, admob_earnings=admob_earnings)
 
 @app.route('/superadmin/videos', methods=['GET'])
 def superadmin_videos():
@@ -672,6 +696,46 @@ def superadmin_logout():
 @app.route('/app')
 def apps():
     return redirect("https://play.google.com/store/apps/details?id=com.starwish.diskly")
+
+@app.route('/superadmin/notifications', methods=['GET', 'POST'])
+def superadmin_notifications():
+    if 'superadmin_token' not in session:
+        return redirect('/superadmin/login')
+        
+    headers = {"Authorization": f"Bearer {session['superadmin_token']}"}
+    
+    if request.method == 'POST':
+        title = request.form.get('title')
+        message = request.form.get('message')
+        
+        if not title or not message:
+            flash("Title and message are required.")
+            return redirect('/superadmin/notifications')
+            
+        try:
+            res = requests.post(f"{API_BASE_URL}/api/superadmin/notifications", headers=headers, json={"title": title, "message": message})
+            if res.status_code == 200:
+                flash("Notification broadcasted successfully.")
+            else:
+                try:
+                    flash(res.json().get("error", "Failed to send notification."))
+                except:
+                    flash("Failed to send notification.")
+        except Exception as e:
+            flash("Server connection failed.")
+        return redirect('/superadmin/notifications')
+        
+    notifications_data = []
+    try:
+        res = requests.get(f"{API_BASE_URL}/api/videos/notifications")
+        if res.status_code == 200:
+            notifications_data = res.json()
+            # Sort with newest first
+            notifications_data.sort(key=lambda x: x.get('createdAt', ''), reverse=True)
+    except Exception as e:
+        pass
+        
+    return render_template("superadmin/notifications.html", notifications=notifications_data)
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 5000)))

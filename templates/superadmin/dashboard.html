@@ -2,10 +2,15 @@
 
 {% block content %}
 <div class="container-fluid py-4">
-    <div class="d-flex justify-content-between align-items-center mb-4">
+    <div class="d-flex justify-content-between align-items-md-center flex-column flex-md-row gap-3 mb-4">
         <div>
             <h2 class="fw-bold text-white mb-1">Superadmin Control Center</h2>
             <p class="text-light opacity-75 small mb-0">Global platform statistics and overview</p>
+        </div>
+        <div>
+            <a href="https://apps.admob.com/" target="_blank" class="btn btn-warning rounded-1 px-4 py-2.5 fw-bold shadow-sm d-inline-flex align-items-center gap-2">
+                <i class="fa-solid fa-square-poll-vertical"></i> Go to AdMob
+            </a>
         </div>
     </div>
 
@@ -78,10 +83,17 @@
                 <div class="position-absolute top-0 end-0 p-3 opacity-25">
                     <i class="fa-solid fa-eye fa-4x text-warning"></i>
                 </div>
-                <div class="position-relative z-1">
-                    <p class="text-light opacity-75 text-uppercase small fw-bold mb-2">Ads Views</p>
-                    <h3 class="text-white fw-bold mb-0">N/A (Coming Soon)</h3>
-                    <p class="small text-muted mb-0">System metric aggregation pending</p>
+                <div class="position-relative z-1 d-flex flex-column h-100 justify-content-between">
+                    <div>
+                        <p class="text-light opacity-75 text-uppercase small fw-bold mb-2">AdMob Estimated Earnings</p>
+                        <h3 class="text-white fw-bold mb-0">${{ admob_earnings or '0.00' }}</h3>
+                        <p class="small text-muted mb-3">Live tracked using Google AdMob API key</p>
+                    </div>
+                    <div>
+                        <a href="https://apps.admob.com/" target="_blank" class="btn btn-sm btn-outline-warning rounded-1 px-3 fw-bold d-inline-flex align-items-center gap-2">
+                            <i class="fa-solid fa-arrow-up-right-from-square"></i> Track Revenue on AdMob
+                        </a>
+                    </div>
                 </div>
             </div>
         </div>
