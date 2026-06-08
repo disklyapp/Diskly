@@ -1,0 +1,302 @@
+{% extends "admin/base.html" %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="fw-bold text-white mb-1">Billing & Payouts</h2>
+            <p class="text-light opacity-75 small mb-0">Configure your payment details and withdraw your earnings.</p>
+        </div>
+    </div>
+
+    <!-- Alert Message Box -->
+    <div id="billingAlert" class="alert d-none text-center" role="alert"></div>
+
+    <!-- Overview Stats -->
+    <div class="row g-4 mb-4">
+        <div class="col-md-6">
+            <div class="card bg-dark bg-opacity-50 border-0 rounded-4 p-4 position-relative overflow-hidden h-100">
+                <div class="position-absolute top-0 end-0 p-3 opacity-25">
+                    <i class="fa-solid fa-wallet fa-4x text-primary-accent"></i>
+                </div>
+                <div class="position-relative z-1">
+                    <p class="text-light opacity-75 text-uppercase small fw-bold mb-2">Available Balance</p>
+                    <h2 class="text-white fw-bold mb-0" id="currentBalanceDisplay">${{ account.get('balance', 0) | round(2) }}</h2>
+                    <p class="text-light opacity-50 small mt-2 mb-0">Ready for instant withdrawal</p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-6">
+            <div class="card bg-dark bg-opacity-50 border-0 rounded-4 p-4 position-relative overflow-hidden h-100">
+                <div class="position-absolute top-0 end-0 p-3 opacity-25">
+                    <i class="fa-solid fa-circle-exclamation fa-4x text-secondary-accent"></i>
+                </div>
+                <div class="position-relative z-1">
+                    <p class="text-light opacity-75 text-uppercase small fw-bold mb-2">Minimum Withdrawal Limit</p>
+                    <h2 class="text-white fw-bold mb-0">${{ account.get('minimumPayoutThreshold', 10.0) }}</h2>
+                    <p class="text-light opacity-50 small mt-2 mb-0">Configured by Superadmin</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-4">
+        <!-- LEFT COLUMN: Payment Configuration & Request Withdrawal -->
+        <div class="col-lg-6">
+            <!-- Payment Method settings -->
+            <div class="card bg-dark bg-opacity-50 border-0 rounded-4 p-4 mb-4">
+                <h5 class="fw-bold text-white mb-3"><i class="fa-solid fa-building-columns text-primary-green me-2"></i>Payment Details</h5>
+                <form id="paymentMethodForm">
+                    <div class="mb-3">
+                        <label class="form-label text-light opacity-75 small fw-semibold">Withdrawal Method</label>
+                        <select class="form-select bg-dark text-white border-secondary border-opacity-50 rounded-3" id="paymentMethodSelect" onchange="toggleMethodFields()">
+                            <option value="bank" {% if account.get('accountNumber') %}selected{% endif %}>Bank Transfer</option>
+                            <option value="upi" {% if account.get('upiId') and not account.get('accountNumber') %}selected{% endif %}>UPI Address</option>
+                        </select>
+                    </div>
+
+                    <!-- UPI ID fields -->
+                    <div id="upiFields" class="d-none">
+                        <div class="mb-3">
+                            <label for="upiId" class="form-label text-light opacity-75 small fw-semibold">UPI ID / Address</label>
+                            <input type="text" class="form-control bg-dark text-white border-secondary border-opacity-50 rounded-3" id="upiId" placeholder="username@upi" value="{{ account.get('upiId') or '' }}">
+                        </div>
+                    </div>
+
+                    <!-- Bank details fields -->
+                    <div id="bankFields" class="d-none">
+                        <div class="mb-3">
+                            <label for="bankName" class="form-label text-light opacity-75 small fw-semibold">Bank Name</label>
+                            <input type="text" class="form-control bg-dark text-white border-secondary border-opacity-50 rounded-3" id="bankName" placeholder="State Bank of India" value="{{ account.get('bankName') or '' }}">
+                        </div>
+                        <div class="mb-3">
+                            <label for="accountNumber" class="form-label text-light opacity-75 small fw-semibold">Account Number</label>
+                            <input type="text" class="form-control bg-dark text-white border-secondary border-opacity-50 rounded-3" id="accountNumber" placeholder="123456789012" value="{{ account.get('accountNumber') or '' }}">
+                        </div>
+                        <div class="mb-3">
+                            <label for="ifscCode" class="form-label text-light opacity-75 small fw-semibold">IFSC Code</label>
+                            <input type="text" class="form-control bg-dark text-white border-secondary border-opacity-50 rounded-3" id="ifscCode" placeholder="SBIN0001234" value="{{ account.get('ifscCode') or '' }}">
+                        </div>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary-green w-100 py-2.5 rounded-pill fw-bold mt-2">
+                        <i class="fa-solid fa-floppy-disk me-2"></i>Save Account Details
+                    </button>
+                </form>
+            </div>
+
+            <!-- Request Payout -->
+            <div class="card bg-dark bg-opacity-50 border-0 rounded-4 p-4">
+                <h5 class="fw-bold text-white mb-3"><i class="fa-solid fa-money-bill-transfer text-primary-green me-2"></i>Request Withdrawal</h5>
+                <form id="withdrawalForm">
+                    <div class="mb-3">
+                        <label for="withdrawAmount" class="form-label text-light opacity-75 small fw-semibold">Amount to Withdraw ($)</label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-dark text-white border-secondary border-opacity-50">$</span>
+                            <input type="number" step="0.01" min="0.01" class="form-control bg-dark text-white border-secondary border-opacity-50 shadow-none" id="withdrawAmount" placeholder="0.00" required>
+                        </div>
+                        <div class="form-text text-light opacity-50 small mt-1">Must be at least ${{ account.get('minimumPayoutThreshold', 10.0) }} and not exceed your balance.</div>
+                    </div>
+
+                    <button type="submit" class="btn btn-green-custom w-100 py-2.5 rounded-pill fw-bold" id="withdrawSubmitBtn">
+                        <i class="fa-solid fa-paper-plane me-2"></i>Submit Payout Request
+                    </button>
+                </form>
+            </div>
+        </div>
+
+        <!-- RIGHT COLUMN: Withdrawal History Table -->
+        <div class="col-lg-6">
+            <div class="card bg-dark bg-opacity-50 border-0 rounded-4 p-4 h-100">
+                <h5 class="fw-bold text-white mb-4"><i class="fa-solid fa-clock-rotate-left text-primary-green me-2"></i>Withdrawal History</h5>
+                
+                <div class="table-responsive">
+                    <table class="table align-middle border-0 text-white mb-0" style="--bs-table-bg: transparent; --bs-table-color: var(--text-color);">
+                        <thead>
+                            <tr class="border-bottom border-secondary border-opacity-25 text-white opacity-75">
+                                <th class="pb-3 text-start">Date</th>
+                                <th class="pb-3 text-center">Amount</th>
+                                <th class="pb-3 text-center">Method</th>
+                                <th class="pb-3 text-center">Details</th>
+                                <th class="pb-3 text-end">Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% if payouts %}
+                                {% for p in payouts %}
+                                    <tr class="border-bottom border-secondary border-opacity-25">
+                                        <td class="py-3 text-start text-light text-nowrap opacity-90">{{ p.createdAt.split('T')[0] if 'T' in p.createdAt else p.createdAt }}</td>
+                                        <td class="py-3 text-center fw-semibold text-white">${{ p.amount | round(2) }}</td>
+                                        <td class="py-3 text-center text-uppercase text-light opacity-75 small">{{ p.paymentMethod }}</td>
+                                        <td class="py-3 text-center text-light opacity-75 small text-truncate" style="max-width: 120px;" title="{{ p.paymentDetails }}">{{ p.paymentDetails }}</td>
+                                        <td class="py-3 text-end">
+                                            {% if p.status == 'COMPLETED' %}
+                                                <span class="badge bg-success rounded-pill px-2.5 py-1.5 small">Completed</span>
+                                            {% elif p.status == 'APPROVED' %}
+                                                <span class="badge bg-primary rounded-pill px-2.5 py-1.5 small">Approved</span>
+                                            {% elif p.status == 'PENDING' %}
+                                                <span class="badge bg-warning text-dark rounded-pill px-2.5 py-1.5 small">Pending</span>
+                                            {% else %}
+                                                <span class="badge bg-danger rounded-pill px-2.5 py-1.5 small">{{ p.status }}</span>
+                                            {% endif %}
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+                            {% else %}
+                                <tr>
+                                    <td colspan="5" class="py-5 text-center text-light opacity-50">No withdrawal records found.</td>
+                                </tr>
+                            {% endif %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    const userBalance = {{ account.get('balance', 0) | float }};
+    const minPayout = {{ account.get('minimumPayoutThreshold', 10.0) | float }};
+    
+    // Checks if the user has completed their payment configurations
+    const hasSavedDetails = {% if account.get('upiId') or account.get('accountNumber') %}true{% else %}false{% endif %};
+
+    function toggleMethodFields() {
+        const method = document.getElementById('paymentMethodSelect').value;
+        const upiFields = document.getElementById('upiFields');
+        const bankFields = document.getElementById('bankFields');
+
+        if (method === 'upi') {
+            upiFields.classList.remove('d-none');
+            bankFields.classList.add('d-none');
+        } else {
+            upiFields.classList.add('d-none');
+            bankFields.classList.remove('d-none');
+        }
+    }
+
+    function showAlert(message, type = 'danger') {
+        const alertBox = document.getElementById('billingAlert');
+        alertBox.className = `alert alert-${type} text-center mb-4`;
+        alertBox.innerText = message;
+        alertBox.classList.remove('d-none');
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+        
+        setTimeout(() => {
+            alertBox.classList.add('d-none');
+        }, 5000);
+    }
+
+    // Initialize Fields on Page Load
+    document.addEventListener('DOMContentLoaded', () => {
+        toggleMethodFields();
+
+        // Handle Payment Details Save Form
+        document.getElementById('paymentMethodForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const method = document.getElementById('paymentMethodSelect').value;
+            const payload = {};
+
+            if (method === 'upi') {
+                payload.upiId = document.getElementById('upiId').value.trim();
+                payload.bankName = "";
+                payload.accountNumber = "";
+                payload.ifscCode = "";
+
+                if (!payload.upiId) {
+                    showAlert('Please enter your UPI ID.');
+                    return;
+                }
+            } else {
+                payload.bankName = document.getElementById('bankName').value.trim();
+                payload.accountNumber = document.getElementById('accountNumber').value.trim();
+                payload.ifscCode = document.getElementById('ifscCode').value.trim();
+                payload.upiId = "";
+
+                if (!payload.bankName || !payload.accountNumber || !payload.ifscCode) {
+                    showAlert('Please complete all Bank Details fields.');
+                    return;
+                }
+            }
+
+            try {
+                const response = await fetch('/admin/billing/payment-method', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                const result = await response.json();
+
+                if (response.ok) {
+                    showAlert('Account details updated successfully!', 'success');
+                    setTimeout(() => window.location.reload(), 1500);
+                } else {
+                    showAlert(result.error || 'Failed to update payment details.');
+                }
+            } catch (err) {
+                console.error(err);
+                showAlert('Server connection error.');
+            }
+        });
+
+        // Handle Withdrawal Request Form
+        document.getElementById('withdrawalForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const amountInput = document.getElementById('withdrawAmount');
+            const amount = parseFloat(amountInput.value);
+
+            if (!hasSavedDetails) {
+                showAlert('Please set up and save your Payment Details (Bank/UPI) before making a withdrawal request.');
+                return;
+            }
+
+            if (isNaN(amount) || amount < minPayout) {
+                showAlert(`The withdrawal amount must be at least $${minPayout}.`);
+                return;
+            }
+
+            if (amount > userBalance) {
+                showAlert('Insufficient balance to request this payout amount.');
+                return;
+            }
+
+            // Create payment details description string for Superadmin review
+            const method = document.getElementById('paymentMethodSelect').value;
+            let detailsString = "";
+            if (method === 'upi') {
+                detailsString = `UPI ID: ${document.getElementById('upiId').value.trim()}`;
+            } else {
+                detailsString = `Bank: ${document.getElementById('bankName').value.trim()} | A/C: ${document.getElementById('accountNumber').value.trim()} | IFSC: ${document.getElementById('ifscCode').value.trim()}`;
+            }
+
+            const payload = {
+                amount: amount,
+                paymentMethod: method.toUpperCase(),
+                paymentDetails: detailsString
+            };
+
+            try {
+                const response = await fetch('/admin/billing/payout', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                const result = await response.json();
+
+                if (response.ok) {
+                    showAlert('Payout requested successfully! Admin will review it.', 'success');
+                    amountInput.value = '';
+                    setTimeout(() => window.location.reload(), 1500);
+                } else {
+                    showAlert(result.error || 'Failed to submit withdrawal request.');
+                }
+            } catch (err) {
+                console.error(err);
+                showAlert('Server connection error.');
+            }
+        });
+    });
+</script>
+{% endblock %}

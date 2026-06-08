@@ -173,6 +173,95 @@ def analytics():
     if 'token' not in session:
         return redirect('/admin/login')
     return render_template('admin/analytics.html')
+
+@app.route('/admin/analytics-data')
+def analytics_data():
+    if 'token' not in session:
+        return {"error": "Unauthorized"}, 401
+    
+    headers = {"Authorization": f"Bearer {session['token']}"}
+    try:
+        res = requests.get(f"{API_BASE_URL}/api/admin/analytics", headers=headers)
+        if res.status_code == 200:
+            return res.json(), 200
+        else:
+            try:
+                err_msg = res.json().get("error", "Failed to fetch analytics")
+            except:
+                err_msg = "Failed to fetch analytics"
+            return {"error": err_msg}, res.status_code
+    except Exception as e:
+        return {"error": "Server connection failed"}, 500
+
+@app.route('/admin/billing', methods=['GET'])
+def billing_page():
+    if 'token' not in session:
+        return redirect('/admin/login')
+
+    headers = {"Authorization": f"Bearer {session['token']}"}
+    account_data = {}
+    payouts = []
+    
+    try:
+        # Fetch account info to get payment method, balance, minimum limit
+        res_acc = requests.get(f"{API_BASE_URL}/api/admin/account", headers=headers)
+        if res_acc.status_code == 200:
+            account_data = res_acc.json()
+        
+        # Fetch payout list
+        res_pay = requests.get(f"{API_BASE_URL}/api/admin/payouts", headers=headers)
+        if res_pay.status_code == 200:
+            payouts = res_pay.json()
+    except Exception as e:
+        flash("Could not connect to server.")
+
+    return render_template(
+        "admin/billing.html",
+        account=account_data,
+        payouts=payouts,
+        token=session['token'],
+        api_base_url=API_BASE_URL
+    )
+
+@app.route('/admin/billing/payment-method', methods=['POST'])
+def billing_payment_method():
+    if 'token' not in session:
+        return {"error": "Unauthorized"}, 401
+        
+    headers = {"Authorization": f"Bearer {session['token']}"}
+    try:
+        res = requests.put(f"{API_BASE_URL}/api/admin/account", json=request.json, headers=headers)
+        if res.status_code == 200:
+            return res.json(), 200
+        else:
+            try:
+                err_msg = res.json().get("error", "Failed to update payment details")
+            except:
+                err_msg = "Failed to update payment details"
+            return {"error": err_msg}, res.status_code
+    except Exception as e:
+        return {"error": "Server connection failed"}, 500
+
+@app.route('/admin/billing/payout', methods=['POST'])
+def billing_payout():
+    if 'token' not in session:
+        return {"error": "Unauthorized"}, 401
+        
+    headers = {"Authorization": f"Bearer {session['token']}"}
+    try:
+        res = requests.post(f"{API_BASE_URL}/api/admin/payouts", json=request.json, headers=headers)
+        if res.status_code == 200:
+            return res.json(), 200
+        else:
+            try:
+                err_msg = res.json().get("error", "Withdrawal failed")
+            except:
+                err_msg = "Withdrawal failed"
+            return {"error": err_msg}, res.status_code
+    except Exception as e:
+        return {"error": "Server connection failed"}, 500
+
+
 @app.route('/admin/logout')
 def logout():
     session.clear()

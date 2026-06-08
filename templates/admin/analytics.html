@@ -1,290 +1,402 @@
 {% extends 'admin/base.html' %}
 
 {% block content %}
-
 <section class="py-4">
 <div class="container-fluid">
 
     <!-- HEADER -->
     <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-3">
         <div>
-            <h2 class="fw-bold mb-1">Dashboard Overview</h2>
-            <p class="text-white mb-0">
-                Live analytics, system health and platform performance.
+            <h2 class="fw-bold mb-1 text-white">Channel Analytics</h2>
+            <p class="text-light opacity-75 mb-0">
+                Detailed metrics for views, uploaded files, and earnings.
             </p>
         </div>
 
-        <button class="btn btn-dark rounded-3" onclick="loadDashboard()">
-            <i class="fa-solid fa-rotate me-2"></i>
+        <button class="btn btn-dark rounded-pill border border-secondary border-opacity-50 px-4 py-2" onclick="loadAnalyticsData()">
+            <i class="fa-solid fa-rotate me-2 text-primary-green"></i>
             Refresh
         </button>
     </div>
 
-    <!-- TOP STATS -->
-    <div class="row g-4 mb-4">
-
-        <div class="col-md-3">
-            <div class="card border-0 shadow-sm rounded-4 p-4 h-100">
-                <div class="text-muted small">Ad Impressions</div>
-                <h3 class="fw-bold mt-2 mb-1" id="impressions">0</h3>
-                <div class="small" id="impressionsChange">--</div>
+    <!-- TOP WALLET STATS -->
+    <div class="row g-4 mb-5">
+        <div class="col-md-2 col-sm-6">
+            <div class="card bg-dark bg-opacity-50 border-0 shadow-sm rounded-4 p-4 h-100 text-center text-md-start">
+                <div class="text-light opacity-75 small fw-semibold">Total Wallet Balance</div>
+                <h3 class="fw-bold mt-2 mb-0 text-white" id="totalWalletBalance">$0.00</h3>
             </div>
         </div>
 
-        <div class="col-md-3">
-            <div class="card border-0 shadow-sm rounded-4 p-4 h-100">
-                <div class="text-muted small">Revenue</div>
-                <h3 class="fw-bold mt-2 mb-1" id="revenue">$0</h3>
-                <div class="small" id="revenueChange">--</div>
+        <div class="col-md-2 col-sm-6">
+            <div class="card bg-dark bg-opacity-50 border-0 shadow-sm rounded-4 p-4 h-100 text-center text-md-start">
+                <div class="text-light opacity-75 small fw-semibold">Available Money</div>
+                <h3 class="fw-bold mt-2 mb-0 text-success" id="availableMoney">$0.00</h3>
             </div>
         </div>
 
-        <div class="col-md-3">
-            <div class="card border-0 shadow-sm rounded-4 p-4 h-100">
-                <div class="text-muted small">Total Videos</div>
-                <h3 class="fw-bold mt-2 mb-1" id="videos">0</h3>
-                <div class="small text-success">
-                    <i class="fa-solid fa-circle-check me-1"></i>
-                    Active Content
-                </div>
+        <div class="col-md-2 col-sm-6">
+            <div class="card bg-dark bg-opacity-50 border-0 shadow-sm rounded-4 p-4 h-100 text-center text-md-start">
+                <div class="text-light opacity-75 small fw-semibold">Pending Money</div>
+                <h3 class="fw-bold mt-2 mb-0 text-warning" id="pendingMoney">$0.00</h3>
             </div>
         </div>
 
-        <div class="col-md-3">
-            <div class="card border-0 shadow-sm rounded-4 p-4 h-100">
-                <div class="text-muted small">Total Views</div>
-                <h3 class="fw-bold mt-2 mb-1" id="views">0</h3>
-                <div class="small text-primary">
-                    <i class="fa-solid fa-eye me-1"></i>
-                    Audience Reach
-                </div>
+        <div class="col-md-2 col-sm-6">
+            <div class="card bg-dark bg-opacity-50 border-0 shadow-sm rounded-4 p-4 h-100 text-center text-md-start">
+                <div class="text-light opacity-75 small fw-semibold">Approved Money</div>
+                <h3 class="fw-bold mt-2 mb-0 text-primary" id="approvedMoney">$0.00</h3>
             </div>
         </div>
 
+        <div class="col-md-2 col-sm-6">
+            <div class="card bg-dark bg-opacity-50 border-0 shadow-sm rounded-4 p-4 h-100 text-center text-md-start">
+                <div class="text-light opacity-75 small fw-semibold">Paid Money</div>
+                <h3 class="fw-bold mt-2 mb-0 text-success" id="paidMoney">$0.00</h3>
+            </div>
+        </div>
+
+        <div class="col-md-2 col-sm-6">
+            <div class="card bg-dark bg-opacity-50 border-0 shadow-sm rounded-4 p-4 h-100 text-center text-md-start">
+                <div class="text-light opacity-75 small fw-semibold">Cancelled Money</div>
+                <h3 class="fw-bold mt-2 mb-0 text-danger" id="cancelledMoney">$0.00</h3>
+            </div>
+        </div>
     </div>
 
-    <!-- SECOND ROW -->
+    <!-- MAIN ANALYTICS SECTION -->
     <div class="row g-4">
-
-        <!-- LEFT -->
+        <!-- LEFT COLUMN: Graph and Monthly Filter -->
         <div class="col-lg-8">
-
-            <!-- CHART -->
-            <div class="card border-0 shadow-sm rounded-4 p-4 mb-4">
-                <div class="d-flex justify-content-between align-items-center mb-3">
-                    <h5 class="fw-bold mb-0">Ad Impressions (Last 7 Days)</h5>
-                    <span class="badge bg-light text-dark">Live</span>
+            <!-- Dynamic Chart -->
+            <div class="card bg-dark bg-opacity-50 border-0 shadow-sm rounded-4 p-4 mb-4">
+                <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+                    <div>
+                        <h5 class="fw-bold mb-0 text-white">Daily Performance Chart</h5>
+                        <span class="small text-light opacity-50">Select a metric below to visualize stats</span>
+                    </div>
+                    <div>
+                        <select class="form-select bg-dark text-white border-secondary border-opacity-50 rounded-3" id="metricSelector" onchange="updateChartDataset()" style="width: auto;">
+                            <option value="views">Total Views</option>
+                            <option value="uploadedFiles">Uploaded Files</option>
+                            <option value="linkEarnings">Link Earnings ($)</option>
+                            <option value="totalEarnings">Total Earnings ($)</option>
+                        </select>
+                    </div>
                 </div>
-                <canvas id="trendChart" height="120"></canvas>
-            </div>
-
-            <!-- VIDEO PERFORMANCE -->
-            <div class="card border-0 shadow-sm rounded-4 p-4">
-                <h5 class="fw-bold mb-4">Video Performance</h5>
-
-                <div class="row g-3">
-
-                    <div class="col-md-4">
-                        <div class="bg-light rounded-4 p-3 text-center">
-                            <div class="small text-muted">Likes</div>
-                            <h4 class="fw-bold mb-0" id="likes">0</h4>
-                        </div>
-                    </div>
-
-                    <div class="col-md-4">
-                        <div class="bg-light rounded-4 p-3 text-center">
-                            <div class="small text-muted">Downloads</div>
-                            <h4 class="fw-bold mb-0" id="downloads">0</h4>
-                        </div>
-                    </div>
-
-                    <div class="col-md-4">
-                        <div class="bg-light rounded-4 p-3 text-center">
-                            <div class="small text-muted">Accounts Reached</div>
-                            <h4 class="fw-bold mb-0" id="accounts">0</h4>
-                        </div>
-                    </div>
-
+                
+                <div style="position: relative; height: 320px; width: 100%;">
+                    <canvas id="analyticsChart"></canvas>
                 </div>
             </div>
 
+            <!-- Monthly Selection & Summary -->
+            <div class="card bg-dark bg-opacity-50 border-0 shadow-sm rounded-4 p-4">
+                <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+                    <h5 class="fw-bold mb-0 text-white"><i class="fa-solid fa-calendar-days text-primary-green me-2"></i>Monthly Earnings Summary</h5>
+                    <div>
+                        <select class="form-select bg-dark text-white border-secondary border-opacity-50 rounded-3" id="monthSelector" onchange="aggregateMonthlyStats()" style="width: auto;">
+                            <!-- Dynamically filled by JS -->
+                        </select>
+                    </div>
+                </div>
+
+                <div class="row g-4">
+                    <div class="col-md-3 col-sm-6">
+                        <div class="p-3 bg-black bg-opacity-25 rounded-3 border border-secondary border-opacity-25 text-center">
+                            <div class="text-light opacity-50 small mb-1">Uploaded Files</div>
+                            <h4 class="fw-bold text-white mb-0" id="monthlyFiles">0</h4>
+                        </div>
+                    </div>
+                    <div class="col-md-3 col-sm-6">
+                        <div class="p-3 bg-black bg-opacity-25 rounded-3 border border-secondary border-opacity-25 text-center">
+                            <div class="text-light opacity-50 small mb-1">Total Views</div>
+                            <h4 class="fw-bold text-white mb-0" id="monthlyViews">0</h4>
+                        </div>
+                    </div>
+                    <div class="col-md-3 col-sm-6">
+                        <div class="p-3 bg-black bg-opacity-25 rounded-3 border border-secondary border-opacity-25 text-center">
+                            <div class="text-light opacity-50 small mb-1">Link Earnings</div>
+                            <h4 class="fw-bold text-success mb-0" id="monthlyLinkEarnings">$0.00</h4>
+                        </div>
+                    </div>
+                    <div class="col-md-3 col-sm-6">
+                        <div class="p-3 bg-black bg-opacity-25 rounded-3 border border-secondary border-opacity-25 text-center">
+                            <div class="text-light opacity-50 small mb-1">Total Earnings</div>
+                            <h4 class="fw-bold text-success mb-0" id="monthlyTotalEarnings">$0.00</h4>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
 
-        <!-- RIGHT -->
+        <!-- RIGHT COLUMN: Daily Date Picker -->
         <div class="col-lg-4">
+            <div class="card bg-dark bg-opacity-50 border-0 shadow-sm rounded-4 p-4 h-100">
+                <h5 class="fw-bold text-white mb-3"><i class="fa-solid fa-calendar-day text-primary-green me-2"></i>Daily Statistics Detail</h5>
+                <p class="text-light opacity-75 small mb-4">Pick a specific date to view the recorded analytics details for that day.</p>
 
-            <!-- SYSTEM STATUS -->
-            <div class="card border-0 shadow-sm rounded-4 p-4 mb-4">
-                <h5 class="fw-bold mb-4">System Status</h5>
-
-                <div class="d-flex justify-content-between align-items-center mb-3">
-                    <span><i class="fa-brands fa-telegram text-primary me-2"></i>Telegram</span>
-                    <span class="badge bg-success">Operational</span>
+                <div class="mb-4">
+                    <label class="form-label text-light opacity-75 small fw-semibold">Select Date</label>
+                    <input type="date" id="dailyDatePicker" class="form-control bg-dark text-white border-secondary border-opacity-50 rounded-3 shadow-none" onchange="displaySelectedDateStats()">
                 </div>
 
-                <div class="d-flex justify-content-between align-items-center mb-3">
-                    <span><i class="fa-solid fa-server text-dark me-2"></i>Server</span>
-                    <span class="badge bg-success">Operational</span>
-                </div>
+                <div class="d-flex flex-column gap-3">
+                    <div class="p-3 bg-black bg-opacity-25 rounded-3 border border-secondary border-opacity-25 d-flex justify-content-between align-items-center">
+                        <span class="text-light opacity-75 small">Uploaded Files</span>
+                        <strong class="text-white fs-5" id="dailyFiles">0</strong>
+                    </div>
 
-                <div class="d-flex justify-content-between align-items-center">
-                    <span><i class="fa-solid fa-database text-info me-2"></i>Database</span>
-                    <span class="badge bg-success">Operational</span>
+                    <div class="p-3 bg-black bg-opacity-25 rounded-3 border border-secondary border-opacity-25 d-flex justify-content-between align-items-center">
+                        <span class="text-light opacity-75 small">Total Views</span>
+                        <strong class="text-white fs-5" id="dailyViews">0</strong>
+                    </div>
+
+                    <div class="p-3 bg-black bg-opacity-25 rounded-3 border border-secondary border-opacity-25 d-flex justify-content-between align-items-center">
+                        <span class="text-light opacity-75 small">Link Earnings</span>
+                        <strong class="text-success fs-5" id="dailyLinkEarnings">$0.00</strong>
+                    </div>
+
+                    <div class="p-3 bg-black bg-opacity-25 rounded-3 border border-secondary border-opacity-25 d-flex justify-content-between align-items-center">
+                        <span class="text-light opacity-75 small">Total Earnings</span>
+                        <strong class="text-success fs-5" id="dailyTotalEarnings">$0.00</strong>
+                    </div>
                 </div>
             </div>
-
-            <!-- DONUT -->
-            <div class="card border-0 shadow-sm rounded-4 p-4">
-                <h5 class="fw-bold mb-4">Traffic Sources</h5>
-                <canvas id="pieChart" height="250"></canvas>
-            </div>
-
         </div>
-
     </div>
-
 </div>
 </section>
 
+<!-- Chart.js -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
 <script>
-const api_url = "https://Disklyservers-production.up.railway.app/api/analytics/";
+    let analyticsData = null;
+    let chartInstance = null;
 
-let trendChart;
-let pieChart;
+    // Helper: Formats float to dollar string
+    function formatCurrency(value) {
+        return '$' + parseFloat(value || 0).toFixed(2);
+    }
 
-/* Helpers */
-function calcPercent(current, oldVal) {
-    if (oldVal == 0) return 100;
-    return ((current - oldVal) / oldVal) * 100;
-}
-
-function renderChange(id, val) {
-    const up = val >= 0;
-    const el = document.getElementById(id);
-
-    el.className = up ? "small text-success" : "small text-danger";
-
-    el.innerHTML = `
-        <i class="fa-solid ${up ? 'fa-arrow-up' : 'fa-arrow-down'} me-1"></i>
-        ${Math.abs(val).toFixed(2)}%
-    `;
-}
-
-/* Charts */
-function initCharts() {
-
-    trendChart = new Chart(document.getElementById('trendChart'), {
-        type: 'line',
-        data: {
-            labels: [],
-            datasets: [{
-                data: [],
-                borderWidth: 3,
-                tension: 0.4,
-                fill: true
-            }]
-        },
-        options: {
-            plugins:{legend:{display:false}},
-            scales:{y:{beginAtZero:true}}
+    // Chart init
+    function initChart(labels = [], dataPoints = [], label = 'Total Views') {
+        const ctx = document.getElementById('analyticsChart').getContext('2d');
+        
+        // Destroy existing chart to rebuild/refresh correctly
+        if (chartInstance) {
+            chartInstance.destroy();
         }
-    });
 
-    pieChart = new Chart(document.getElementById('pieChart'), {
-        type: 'doughnut',
-        data: {
-            labels:['Ads','Videos','Organic'],
-            datasets:[{
-                data:[45,35,20],
-                borderWidth:0
-            }]
-        },
-        options:{
-            plugins:{
-                legend:{position:'bottom'}
+        // Get Accent Color for theme compatibility
+        const accentColor = getComputedStyle(document.documentElement).getPropertyValue('--primary-accent').trim() || '#22c55e';
+
+        chartInstance = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: label,
+                    data: dataPoints,
+                    borderColor: accentColor,
+                    backgroundColor: 'rgba(34, 197, 94, 0.1)',
+                    borderWidth: 3,
+                    tension: 0.35,
+                    fill: true,
+                    pointBackgroundColor: accentColor,
+                    pointHoverRadius: 7
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        labels: { color: '#ffffff' }
+                    }
+                },
+                scales: {
+                    x: {
+                        ticks: { color: '#a0a0a0' },
+                        grid: { color: 'rgba(255, 255, 255, 0.05)' }
+                    },
+                    y: {
+                        ticks: { color: '#a0a0a0' },
+                        grid: { color: 'rgba(255, 255, 255, 0.05)' },
+                        beginAtZero: true
+                    }
+                }
+            }
+        });
+    }
+
+    // Re-draws chart based on chosen dropdown metric
+    function updateChartDataset() {
+        if (!analyticsData || !analyticsData.daily || analyticsData.daily.length === 0) return;
+
+        const metric = document.getElementById('metricSelector').value;
+        const labels = analyticsData.daily.map(item => {
+            const dateObj = new Date(item.date);
+            return dateObj.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+        });
+
+        let dataPoints = [];
+        let labelName = "";
+
+        if (metric === 'views') {
+            dataPoints = analyticsData.daily.map(item => item.views);
+            labelName = "Total Views";
+        } else if (metric === 'uploadedFiles') {
+            dataPoints = analyticsData.daily.map(item => item.uploadedFiles);
+            labelName = "Uploaded Files";
+        } else if (metric === 'linkEarnings') {
+            dataPoints = analyticsData.daily.map(item => item.linkEarnings);
+            labelName = "Link Earnings ($)";
+        } else if (metric === 'totalEarnings') {
+            dataPoints = analyticsData.daily.map(item => item.totalEarnings);
+            labelName = "Total Earnings ($)";
+        }
+
+        initChart(labels, dataPoints, labelName);
+    }
+
+    // Displays stats for a selected day on the picker card
+    function displaySelectedDateStats() {
+        if (!analyticsData) return;
+        
+        const dateInput = document.getElementById('dailyDatePicker').value;
+        if (!dateInput) return;
+
+        // Search for matching date in response array
+        const dayRecord = analyticsData.daily.find(item => item.date === dateInput);
+
+        if (dayRecord) {
+            document.getElementById('dailyFiles').innerText = dayRecord.uploadedFiles;
+            document.getElementById('dailyViews').innerText = dayRecord.views.toLocaleString();
+            document.getElementById('dailyLinkEarnings').innerText = formatCurrency(dayRecord.linkEarnings);
+            document.getElementById('dailyTotalEarnings').innerText = formatCurrency(dayRecord.totalEarnings);
+        } else {
+            // No logs for this date -> default 0
+            document.getElementById('dailyFiles').innerText = '0';
+            document.getElementById('dailyViews').innerText = '0';
+            document.getElementById('dailyLinkEarnings').innerText = '$0.00';
+            document.getElementById('dailyTotalEarnings').innerText = '$0.00';
+        }
+    }
+
+    // Populate months options starting from the user's signup date to current month
+    function populateMonthDropdown(signupDateStr) {
+        const select = document.getElementById('monthSelector');
+        select.innerHTML = ""; // Clear existing
+
+        const startDate = new Date(signupDateStr);
+        const endDate = new Date(); // Today
+
+        const startYear = startDate.getFullYear();
+        const startMonth = startDate.getMonth();
+        const endYear = endDate.getFullYear();
+        const endMonth = endDate.getMonth();
+
+        const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+
+        let year = endYear;
+        let month = endMonth;
+
+        while (year > startYear || (year === startYear && month >= startMonth)) {
+            const optValue = `${year}-${String(month + 1).padStart(2, '0')}`;
+            const optText = `${monthNames[month]} ${year}`;
+            
+            const option = document.createElement('option');
+            option.value = optValue;
+            option.text = optText;
+            select.appendChild(option);
+
+            month--;
+            if (month < 0) {
+                month = 11;
+                year--;
             }
         }
-    });
-}
 
-/* Load API */
-async function loadDashboard() {
-
-    try {
-        const res = await fetch(api_url);
-        const data = await res.json();
-
-        /* Ads */
-        document.getElementById("impressions").innerText =
-            data.ads.current.impressions.toLocaleString();
-
-        document.getElementById("revenue").innerText =
-            "$" + data.ads.current.revenue.toFixed(4);
-
-        renderChange(
-            "impressionsChange",
-            calcPercent(
-                data.ads.current.impressions,
-                data.ads.lastMonth.impressions
-            )
-        );
-
-        renderChange(
-            "revenueChange",
-            calcPercent(
-                data.ads.current.revenue,
-                data.ads.lastMonth.revenue
-            )
-        );
-
-        /* Videos */
-        document.getElementById("videos").innerText =
-            data.videos.totalVideos;
-
-        document.getElementById("views").innerText =
-            data.videos.totalViews;
-
-        document.getElementById("likes").innerText =
-            data.videos.totalLikes;
-
-        document.getElementById("downloads").innerText =
-            data.videos.totalDownloads;
-
-        document.getElementById("accounts").innerText =
-            data.ads.current.accountsReached;
-
-        /* Trend Graph */
-        const labels = data.ads.last7Days.map(x =>
-            new Date(x.date).toLocaleDateString('en-US', {
-                month:'short',
-                day:'numeric'
-            })
-        );
-
-        const values = data.ads.last7Days.map(x => x.impressions);
-
-        trendChart.data.labels = labels;
-        trendChart.data.datasets[0].data = values;
-        trendChart.update();
-
-        /* Random Pie */
-        let ads = Math.floor(Math.random() * 20) + 40;
-        let vids = Math.floor(Math.random() * 20) + 25;
-        let organic = 100 - ads - vids;
-
-        pieChart.data.datasets[0].data = [ads, vids, organic];
-        pieChart.update();
-
-    } catch(err) {
-        console.error(err);
-        alert("Failed to load dashboard");
+        // Trigger initial calculation
+        aggregateMonthlyStats();
     }
-}
 
-initCharts();
-loadDashboard();
+    // Calculates monthly statistics for the selected month option
+    function aggregateMonthlyStats() {
+        if (!analyticsData) return;
+
+        const selector = document.getElementById('monthSelector');
+        if (!selector.value) return;
+
+        const [year, monthStr] = selector.value.split('-');
+        
+        let totalFiles = 0;
+        let totalViews = 0;
+        let totalLinkEarnings = 0;
+        let totalEarnings = 0;
+
+        // Filter daily records matching year and month
+        analyticsData.daily.forEach(item => {
+            const [itemYear, itemMonth] = item.date.split('-');
+            if (itemYear === year && itemMonth === monthStr) {
+                totalFiles += item.uploadedFiles;
+                totalViews += item.views;
+                totalLinkEarnings += item.linkEarnings;
+                totalEarnings += item.totalEarnings;
+            }
+        });
+
+        document.getElementById('monthlyFiles').innerText = totalFiles;
+        document.getElementById('monthlyViews').innerText = totalViews.toLocaleString();
+        document.getElementById('monthlyLinkEarnings').innerText = formatCurrency(totalLinkEarnings);
+        document.getElementById('monthlyTotalEarnings').innerText = formatCurrency(totalEarnings);
+    }
+
+    // Load metrics payload from local Flask gateway proxy
+    async function loadAnalyticsData() {
+        try {
+            const response = await fetch('/admin/analytics-data');
+            const data = await response.json();
+
+            if (!response.ok) {
+                alert(data.error || 'Failed to load analytics.');
+                return;
+            }
+
+            analyticsData = data;
+
+            // Fill header values
+            document.getElementById('totalWalletBalance').innerText = formatCurrency(data.money.totalWalletBalance);
+            document.getElementById('availableMoney').innerText = formatCurrency(data.money.available);
+            document.getElementById('pendingMoney').innerText = formatCurrency(data.money.pending);
+            document.getElementById('approvedMoney').innerText = formatCurrency(data.money.approved);
+            document.getElementById('paidMoney').innerText = formatCurrency(data.money.paid);
+            document.getElementById('cancelledMoney').innerText = formatCurrency(data.money.cancelled);
+
+            // Set default date picker to today
+            const today = new Date().toISOString().split('T')[0];
+            document.getElementById('dailyDatePicker').value = today;
+
+            // Populate monthly select dropdown and calculate stats
+            populateMonthDropdown(data.adminCreatedAt);
+
+            // Draw line chart (Views metric by default)
+            updateChartDataset();
+
+            // Display current day statistics
+            displaySelectedDateStats();
+
+        } catch (err) {
+            console.error('Error fetching analytics details:', err);
+            alert('Failed to connect to analytics server.');
+        }
+    }
+
+    // Bootstrapping
+    document.addEventListener('DOMContentLoaded', () => {
+        loadAnalyticsData();
+    });
 </script>
-
 {% endblock %}
