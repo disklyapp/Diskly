@@ -31,7 +31,7 @@
                 <option value="newest">Newest First</option>
                 <option value="views">Most Views</option>
                 <option value="likes">Most Likes</option>
-                <option value="downloads">Most Downloads</option>
+                <option value="downloads">Most Reports</option>
             </select>
         </div>
     </div>
@@ -166,7 +166,7 @@
                         <div class="d-flex gap-3 small text-white-50 mb-2 flex-wrap" style="font-size:12px;">
                             <span>👁 ${video.views || 0} Views</span>
                             <span>❤️ ${video.likes || 0} Likes</span>
-                            <span>⬇ ${video.bookmarks || 0} Downloads</span>
+                            <span>🚩 ${video.bookmarks || 0} Reports</span>
                             <span>💾 ${formatBytes(video.size || 0)}</span>
                         </div>
 
@@ -262,7 +262,7 @@
             document.getElementById("detailDesc").innerText = v.description || 'No description available';
             document.getElementById("detailViews").innerText = "👁 " + (v.views || 0);
             document.getElementById("detailLikes").innerText = "❤️ " + (v.likes || 0);
-            document.getElementById("detailDownloads").innerText = "⬇ " + (v.bookmarks || 0);
+            document.getElementById("detailDownloads").innerText = "🚩 " + (v.bookmarks || 0) + " Reports";
             document.getElementById("detailSize").innerText = "💾 " + formatBytes(v.size || 0);
 
             document.getElementById("copyBtn").onclick = () => {

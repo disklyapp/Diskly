@@ -523,6 +523,65 @@ def superadmin_admins_status(admin_id):
     except Exception as e:
         return Response(json.dumps({"error": "Server connection failed"}), status=500, mimetype='application/json')
 
+@app.route('/superadmin/admins/<int:admin_id>', methods=['PUT'])
+def superadmin_admins_edit(admin_id):
+    if 'superadmin_token' not in session:
+        return Response(json.dumps({"error": "Unauthorized"}), status=401, mimetype='application/json')
+    
+    api_url = f"{API_BASE_URL}/api/superadmin/admins/{admin_id}"
+    headers = {"Authorization": f"Bearer {session['superadmin_token']}"}
+    try:
+        response = requests.put(api_url, headers=headers, json=request.json)
+        return Response(response.text, status=response.status_code, mimetype='application/json')
+    except Exception as e:
+        return Response(json.dumps({"error": "Server connection failed"}), status=500, mimetype='application/json')
+
+@app.route('/superadmin/videos/<int:video_id>', methods=['DELETE'])
+def superadmin_delete_video(video_id):
+    if 'superadmin_token' not in session:
+        return Response(json.dumps({"error": "Unauthorized"}), status=401, mimetype='application/json')
+    
+    api_url = f"{API_BASE_URL}/api/superadmin/videos/{video_id}"
+    headers = {"Authorization": f"Bearer {session['superadmin_token']}"}
+    try:
+        response = requests.delete(api_url, headers=headers)
+        return Response(response.text, status=response.status_code, mimetype='application/json')
+    except Exception as e:
+        return Response(json.dumps({"error": "Server connection failed"}), status=500, mimetype='application/json')
+
+@app.route('/superadmin/logs', methods=['GET'])
+def superadmin_logs():
+    if 'superadmin_token' not in session:
+        return redirect('/superadmin/login')
+        
+    headers = {"Authorization": f"Bearer {session['superadmin_token']}"}
+    logs = []
+    try:
+        res = requests.get(f"{API_BASE_URL}/api/superadmin/activity-logs", headers=headers)
+        if res.status_code == 200:
+            logs = res.json()
+    except Exception as e:
+        flash("Could not connect to server.")
+        
+    return render_template("superadmin/logs.html", logs=logs)
+
+@app.route('/superadmin/reported-videos', methods=['GET'])
+def superadmin_reported_videos():
+    if 'superadmin_token' not in session:
+        return redirect('/superadmin/login')
+        
+    headers = {"Authorization": f"Bearer {session['superadmin_token']}"}
+    videos_data = []
+    try:
+        response = requests.get(f"{API_BASE_URL}/api/superadmin/videos", headers=headers)
+        if response.status_code == 200:
+            videos_data = [v for v in response.json() if v.get('bookmarks', 0) > 0]
+            videos_data.sort(key=lambda x: x.get('bookmarks', 0), reverse=True)
+    except Exception as e:
+        flash("Could not connect to server.")
+        
+    return render_template("superadmin/reported_videos.html", videos=videos_data)
+
 @app.route('/superadmin/payouts', methods=['GET'])
 def superadmin_payouts():
     if 'superadmin_token' not in session:

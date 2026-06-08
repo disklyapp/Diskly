@@ -22,7 +22,7 @@
                 <option value="newest">Newest First</option>
                 <option value="views">Most Views</option>
                 <option value="likes">Most Likes</option>
-                <option value="downloads">Most Downloads</option>
+                <option value="downloads">Most Reports</option>
             </select>
         </div>
     </div>
@@ -35,7 +35,7 @@
                         <tr>
                             <th class="ps-4">Video</th>
                             <th>Uploader Email</th>
-                            <th>Stats (Views/Likes/Bookmarks)</th>
+                            <th>Stats (Views/Likes/Reports)</th>
                             <th>Date Uploaded</th>
                             <th>Action</th>
                         </tr>
@@ -70,7 +70,7 @@
                                 <div class="d-flex flex-column gap-1">
                                     <span class="small opacity-75"><i class="fa-solid fa-eye me-1"></i> {{ video.views }}</span>
                                     <span class="small opacity-75"><i class="fa-solid fa-heart me-1"></i> {{ video.likes }}</span>
-                                    <span class="small opacity-75"><i class="fa-solid fa-bookmark me-1"></i> {{ video.bookmarks }}</span>
+                                    <span class="small opacity-75 text-danger"><i class="fa-solid fa-flag me-1"></i> {{ video.bookmarks }} Reports</span>
                                 </div>
                             </td>
                             <td>
@@ -101,7 +101,20 @@
 <script>
 async function deleteVideo(id) {
     if(!confirm("Are you sure you want to permanently delete this video?")) return;
-    alert("Superadmin global delete functionality is restricted to backend implementation. Currently view-only.");
+    try {
+        const res = await fetch(`/superadmin/videos/${id}`, {
+            method: "DELETE"
+        });
+        if(res.ok) {
+            alert("Video successfully deleted.");
+            window.location.reload();
+        } else {
+            const data = await res.json();
+            alert(data.error || "Failed to delete video.");
+        }
+    } catch(err) {
+        alert("Server connection failed.");
+    }
 }
 
 document.getElementById("searchInput").addEventListener("keyup", function () {

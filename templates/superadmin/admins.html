@@ -59,14 +59,8 @@
                                 <div class="small text-warning">Bal: ${{ admin.balance }}</div>
                             </td>
                             <td class="py-3 px-4">
-                                <div class="d-flex gap-2 align-items-center">
-                                    <input type="number" id="daily_{{ admin.id }}" class="form-control form-control-sm bg-black text-white border-secondary" value="{{ admin.dailyUploadLimit }}" style="width: 80px;" title="Daily Limit">
-                                    <span class="text-muted">/</span>
-                                    <input type="number" id="monthly_{{ admin.id }}" class="form-control form-control-sm bg-black text-white border-secondary" value="{{ admin.monthlyUploadLimit }}" style="width: 80px;" title="Monthly Limit">
-                                    <button class="btn btn-sm btn-outline-success" onclick="updateLimits({{ admin.id }})" title="Save Limits">
-                                        <i class="fa-solid fa-save"></i>
-                                    </button>
-                                </div>
+                                <span class="badge bg-secondary">{{ admin.dailyUploadLimit }} Daily</span>
+                                <span class="badge bg-secondary">{{ admin.monthlyUploadLimit }} Monthly</span>
                             </td>
                             <td class="py-3 px-4 text-center">
                                 {% if admin.isActive %}
@@ -76,11 +70,14 @@
                                 {% endif %}
                             </td>
                             <td class="py-3 px-4 text-end">
-                                {% if admin.isActive %}
-                                    <button class="btn btn-sm btn-outline-danger px-3 rounded-pill" onclick="toggleStatus({{ admin.id }}, false)">Disable</button>
-                                {% else %}
-                                    <button class="btn btn-sm btn-outline-success px-3 rounded-pill" onclick="toggleStatus({{ admin.id }}, true)">Activate</button>
-                                {% endif %}
+                                <div class="d-flex justify-content-end gap-2">
+                                    <button class="btn btn-sm btn-outline-warning rounded-pill px-3" onclick="openEditAdminModal({{ admin | tojson | safe }})">Edit</button>
+                                    {% if admin.isActive %}
+                                        <button class="btn btn-sm btn-outline-danger px-3 rounded-pill" onclick="toggleStatus({{ admin.id }}, false)">Disable</button>
+                                    {% else %}
+                                        <button class="btn btn-sm btn-outline-success px-3 rounded-pill" onclick="toggleStatus({{ admin.id }}, true)">Activate</button>
+                                    {% endif %}
+                                </div>
                             </td>
                         </tr>
                         {% endfor %}
@@ -95,31 +92,99 @@
     </div>
 </div>
 
+<!-- Edit Admin Modal -->
+<div class="modal fade" id="editAdminModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content bg-dark text-white border-secondary">
+      <div class="modal-header border-secondary">
+        <h5 class="modal-title"><i class="fa-solid fa-user-pen text-warning me-2"></i>Edit Admin Account</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <form id="editAdminForm">
+            <input type="hidden" id="editAdminId">
+            <div class="mb-3">
+                <label class="form-label">Email</label>
+                <input type="email" id="editAdminEmail" class="form-control bg-secondary text-white border-0" required>
+            </div>
+            <div class="mb-3">
+                <label class="form-label">Name</label>
+                <input type="text" id="editAdminName" class="form-control bg-secondary text-white border-0" placeholder="No name set">
+            </div>
+            <div class="mb-3">
+                <label class="form-label">Wallet Balance ($)</label>
+                <input type="number" step="0.000001" id="editAdminBalance" class="form-control bg-secondary text-white border-0" required>
+            </div>
+            <div class="row mb-3">
+                <div class="col-md-6">
+                    <label class="form-label">Daily Limit</label>
+                    <input type="number" id="editAdminDaily" class="form-control bg-secondary text-white border-0" required>
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label">Monthly Limit</label>
+                    <input type="number" id="editAdminMonthly" class="form-control bg-secondary text-white border-0" required>
+                </div>
+            </div>
+            <div class="mb-3">
+                <label class="form-label">Account Status</label>
+                <select id="editAdminStatus" class="form-select bg-secondary text-white border-0">
+                    <option value="true">Active</option>
+                    <option value="false">Disabled</option>
+                </select>
+            </div>
+            <button type="submit" class="btn btn-primary-green w-100 py-2.5 rounded-pill fw-bold">Save Changes</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
 <script>
-    async function updateLimits(adminId) {
-        const daily = document.getElementById(`daily_${adminId}`).value;
-        const monthly = document.getElementById(`monthly_${adminId}`).value;
+    let editAdminModalInstance = null;
+
+    function openEditAdminModal(admin) {
+        document.getElementById("editAdminId").value = admin.id;
+        document.getElementById("editAdminEmail").value = admin.email;
+        document.getElementById("editAdminName").value = admin.name || "";
+        document.getElementById("editAdminBalance").value = admin.balance;
+        document.getElementById("editAdminDaily").value = admin.dailyUploadLimit;
+        document.getElementById("editAdminMonthly").value = admin.monthlyUploadLimit;
+        document.getElementById("editAdminStatus").value = admin.isActive ? "true" : "false";
         
-        try {
-            const res = await fetch('/superadmin/admins/limits', {
-                method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    adminIds: [adminId],
-                    dailyUploadLimit: parseInt(daily),
-                    monthlyUploadLimit: parseInt(monthly)
-                })
-            });
-            const data = await res.json();
-            if(res.ok) {
-                alert("Limits updated successfully!");
-            } else {
-                alert(data.error || "Failed to update limits.");
-            }
-        } catch (e) {
-            alert("Error connecting to server.");
-        }
+        editAdminModalInstance = new bootstrap.Modal(document.getElementById('editAdminModal'));
+        editAdminModalInstance.show();
     }
+
+    document.getElementById("editAdminForm").addEventListener("submit", async function(e) {
+        e.preventDefault();
+        const id = document.getElementById("editAdminId").value;
+        const payload = {
+            email: document.getElementById("editAdminEmail").value.trim(),
+            name: document.getElementById("editAdminName").value.trim(),
+            balance: parseFloat(document.getElementById("editAdminBalance").value),
+            dailyUploadLimit: parseInt(document.getElementById("editAdminDaily").value),
+            monthlyUploadLimit: parseInt(document.getElementById("editAdminMonthly").value),
+            isActive: document.getElementById("editAdminStatus").value === "true"
+        };
+
+        try {
+            const res = await fetch(`/superadmin/admins/${id}`, {
+                method: "PUT",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(payload)
+            });
+
+            if (res.ok) {
+                alert("Admin details saved!");
+                window.location.reload();
+            } else {
+                const data = await res.json();
+                alert(data.error || "Failed to save changes");
+            }
+        } catch(err) {
+            alert("Server connection failed");
+        }
+    });
 
     async function toggleStatus(adminId, isActive) {
         if(!confirm(`Are you sure you want to ${isActive ? 'activate' : 'disable'} this admin?`)) return;

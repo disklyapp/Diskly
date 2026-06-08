@@ -129,7 +129,15 @@
                                         <td class="py-3 text-start text-light text-nowrap opacity-90">{{ p.createdAt.split('T')[0] if 'T' in p.createdAt else p.createdAt }}</td>
                                         <td class="py-3 text-center fw-semibold text-white">${{ "%.2f" | format(p.amount | float) }}</td>
                                         <td class="py-3 text-center text-uppercase text-light opacity-75 small">{{ p.paymentMethod }}</td>
-                                        <td class="py-3 text-center text-light opacity-75 small text-truncate" style="max-width: 120px;" title="{{ p.paymentDetails }}">{{ p.paymentDetails }}</td>
+                                        <td class="py-3 text-center text-light opacity-75 small">
+                                            <div class="text-truncate" style="max-width: 150px; margin: 0 auto;" title="{{ p.paymentDetails }}">{{ p.paymentDetails }}</div>
+                                            {% if p.transactionId %}
+                                            <div class="text-success mt-1" style="font-size:11px;"><i class="fa-solid fa-receipt me-1"></i>TxID: {{ p.transactionId }}</div>
+                                            {% endif %}
+                                            {% if p.remarks %}
+                                            <div class="text-info mt-1" style="font-size:11px;"><i class="fa-solid fa-comment me-1"></i>{{ p.remarks }}</div>
+                                            {% endif %}
+                                        </td>
                                         <td class="py-3 text-end">
                                             {% if p.status == 'COMPLETED' %}
                                                 <span class="badge bg-success rounded-pill px-2.5 py-1.5 small">Completed</span>

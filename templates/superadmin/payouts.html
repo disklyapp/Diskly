@@ -44,6 +44,12 @@
                                 <div class="text-white fw-medium">{{ payout.paymentMethod }}</div>
                                 <div class="small text-light opacity-75">{{ payout.paymentDetails }}</div>
                                 <div class="small text-light opacity-50 mt-1">Req: {{ payout.createdAt[:10] }}</div>
+                                {% if payout.transactionId %}
+                                <div class="small text-success mt-1"><i class="fa-solid fa-receipt me-1"></i>TxID: {{ payout.transactionId }}</div>
+                                {% endif %}
+                                {% if payout.remarks %}
+                                <div class="small text-info mt-1"><i class="fa-solid fa-comment me-1"></i>Remarks: {{ payout.remarks }}</div>
+                                {% endif %}
                             </td>
                             <td class="py-3 px-4">
                                 <div class="text-white fw-bold fs-5">${{ payout.amount }}</div>
@@ -51,21 +57,16 @@
                             <td class="py-3 px-4 text-center">
                                 {% if payout.status == 'PENDING' %}
                                     <span class="badge bg-warning bg-opacity-25 text-warning border border-warning border-opacity-25 rounded-pill px-3 py-2">Pending</span>
-                                {% elif payout.status == 'ACCEPTED' %}
-                                    <span class="badge bg-success bg-opacity-25 text-success border border-success border-opacity-25 rounded-pill px-3 py-2">Accepted</span>
+                                {% elif payout.status == 'COMPLETED' %}
+                                    <span class="badge bg-success bg-opacity-25 text-success border border-success border-opacity-25 rounded-pill px-3 py-2">Paid</span>
+                                {% elif payout.status == 'APPROVED' or payout.status == 'ACCEPTED' %}
+                                    <span class="badge bg-primary bg-opacity-25 text-primary border border-primary border-opacity-25 rounded-pill px-3 py-2">Approved</span>
                                 {% else %}
-                                    <span class="badge bg-danger bg-opacity-25 text-danger border border-danger border-opacity-25 rounded-pill px-3 py-2">Rejected</span>
+                                    <span class="badge bg-danger bg-opacity-25 text-danger border border-danger border-opacity-25 rounded-pill px-3 py-2">Cancelled</span>
                                 {% endif %}
                             </td>
                             <td class="py-3 px-4 text-end">
-                                {% if payout.status == 'PENDING' %}
-                                    <div class="d-flex justify-content-end gap-2">
-                                        <button class="btn btn-sm btn-outline-success px-3 rounded-pill" onclick="processPayout({{ payout.id }}, 'ACCEPTED')">Accept</button>
-                                        <button class="btn btn-sm btn-outline-danger px-3 rounded-pill" onclick="processPayout({{ payout.id }}, 'REJECTED')">Reject</button>
-                                    </div>
-                                {% else %}
-                                    <span class="text-light opacity-50 small">Processed</span>
-                                {% endif %}
+                                <button class="btn btn-sm btn-outline-success px-3 rounded-pill" onclick="openPayoutModal({{ payout | tojson | safe }})">Process</button>
                             </td>
                         </tr>
                         {% endfor %}
@@ -80,25 +81,106 @@
     </div>
 </div>
 
+<!-- Process Payout Modal -->
+<div class="modal fade" id="payoutModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content bg-dark text-white border-secondary">
+      <div class="modal-header border-secondary">
+        <h5 class="modal-title"><i class="fa-solid fa-money-check-dollar text-success me-2"></i>Process Payout Request</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <form id="payoutForm">
+            <input type="hidden" id="payoutIdInput">
+            <div class="mb-3">
+                <label class="form-label">Admin Email</label>
+                <input type="text" id="payoutAdminEmail" class="form-control bg-secondary text-white border-0" disabled>
+            </div>
+            <div class="mb-3">
+                <label class="form-label">Amount ($)</label>
+                <input type="text" id="payoutAmount" class="form-control bg-secondary text-white border-0" disabled>
+            </div>
+            <div class="mb-3">
+                <label class="form-label">Payment Details</label>
+                <textarea id="payoutDetails" class="form-control bg-secondary text-white border-0" rows="2" disabled></textarea>
+            </div>
+            <div class="mb-3">
+                <label class="form-label">Status</label>
+                <select id="payoutStatusSelect" class="form-select bg-secondary text-white border-0">
+                    <option value="PENDING">Pending</option>
+                    <option value="APPROVED">Approved</option>
+                    <option value="COMPLETED">Paid (Completed)</option>
+                    <option value="REJECTED">Cancel Payment (Rejected & Refunded)</option>
+                </select>
+            </div>
+            <div class="mb-3">
+                <label class="form-label">Transaction ID / Reference</label>
+                <input type="text" id="payoutTxId" class="form-control bg-secondary text-white border-0" placeholder="e.g. TXN102930129">
+            </div>
+            <div class="mb-3">
+                <label class="form-label">Remarks</label>
+                <textarea id="payoutRemarks" class="form-control bg-secondary text-white border-0" rows="2" placeholder="e.g. Sent via UPI successfully."></textarea>
+            </div>
+            <button type="submit" class="btn btn-primary-green w-100 py-2.5 rounded-pill fw-bold">Save Changes</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
 <script>
-    async function processPayout(payoutId, status) {
-        if(!confirm(`Are you sure you want to mark this payout as ${status}?`)) return;
+    let payoutModalInstance = null;
+
+    function openPayoutModal(payout) {
+        document.getElementById("payoutIdInput").value = payout.id;
+        document.getElementById("payoutAdminEmail").value = payout.admin ? payout.admin.email : `ID: ${payout.adminId}`;
+        document.getElementById("payoutAmount").value = `$${payout.amount}`;
+        document.getElementById("payoutDetails").value = payout.paymentDetails;
+        document.getElementById("payoutStatusSelect").value = payout.status;
+        document.getElementById("payoutTxId").value = payout.transactionId || "";
+        document.getElementById("payoutRemarks").value = payout.remarks || "";
+
+        // If the payout status is already finalized (not PENDING), disable status editing to prevent accidental changes
+        if (payout.status !== 'PENDING') {
+            document.getElementById("payoutStatusSelect").disabled = true;
+        } else {
+            document.getElementById("payoutStatusSelect").disabled = false;
+        }
         
+        payoutModalInstance = new bootstrap.Modal(document.getElementById('payoutModal'));
+        payoutModalInstance.show();
+    }
+
+    document.getElementById("payoutForm").addEventListener("submit", async function(e) {
+        e.preventDefault();
+        const id = document.getElementById("payoutIdInput").value;
+        const statusSelect = document.getElementById("payoutStatusSelect");
+        
+        const payload = {
+            remarks: document.getElementById("payoutRemarks").value.trim(),
+            transactionId: document.getElementById("payoutTxId").value.trim()
+        };
+
+        if (!statusSelect.disabled) {
+            payload.status = statusSelect.value;
+        }
+
         try {
-            const res = await fetch(`/superadmin/payouts/${payoutId}`, {
+            const res = await fetch(`/superadmin/payouts/${id}`, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ status: status })
+                body: JSON.stringify(payload)
             });
             const data = await res.json();
             if(res.ok) {
+                alert("Payout updated successfully!");
                 window.location.reload();
             } else {
-                alert(data.error || "Failed to process payout.");
+                alert(data.error || "Failed to update payout.");
             }
         } catch (e) {
             alert("Error connecting to server.");
         }
-    }
+    });
 </script>
 {% endblock %}
