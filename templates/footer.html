@@ -82,8 +82,8 @@
                             <div class="fw-semibold lh-1" style="font-size: 0.95rem;">Google Play</div>
                         </div>
                     </a>
-                    <a href="/app"
-                        class="app-btn bg-black border border-secondary border-opacity-50 rounded-3 px-3 py-2 text-decoration-none text-white d-inline-flex align-items-center gap-3 transition-all"
+                    <a href="#"
+                        class="app-btn ios-download-btn bg-black border border-secondary border-opacity-50 rounded-3 px-3 py-2 text-decoration-none text-white d-inline-flex align-items-center gap-3 transition-all"
                         style="width: fit-content; min-width: 180px;">
                         <i class="fa-brands fa-apple fs-3"></i>
                         <div class="text-start">
@@ -114,3 +114,37 @@
         </div>
     </div>
 </footer>
+
+<!-- iOS App Coming Soon Modal -->
+<div class="modal fade" id="iosAppModal" tabindex="-1" aria-labelledby="iosAppModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content text-white border-secondary border-opacity-50 rounded-4" style="background-color: var(--nav-bg); border: 1px solid var(--glass-border);">
+            <div class="modal-header border-0 pb-0">
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close" style="filter: invert(1);"></button>
+            </div>
+            <div class="modal-body text-center pt-0 px-4 pb-5">
+                <div class="mb-4 d-inline-flex align-items-center justify-content-center rounded-circle bg-success bg-opacity-10 border border-success border-opacity-25" style="width: 80px; height: 80px;">
+                    <i class="fa-brands fa-apple text-primary-green" style="font-size: 45px;"></i>
+                </div>
+                <h3 class="fw-bold mb-2">iOS App Coming Soon</h3>
+                <p class="text-muted mb-4" style="color: var(--text-muted) !important;">
+                    We are currently building the Diskly app for iOS. The App Store release will be available soon!
+                </p>
+                <button type="button" class="btn btn-green-custom rounded-pill px-5 py-2 fw-semibold" data-bs-dismiss="modal">Got it</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const iosButtons = document.querySelectorAll('.ios-download-btn');
+    iosButtons.forEach(button => {
+        button.addEventListener('click', function(e) {
+            e.preventDefault();
+            const myModal = new bootstrap.Modal(document.getElementById('iosAppModal'));
+            myModal.show();
+        });
+    });
+});
+</script>
