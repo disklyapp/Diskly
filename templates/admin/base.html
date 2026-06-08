@@ -15,6 +15,32 @@
 
     <!-- Custom CSS -->
     <link rel="stylesheet" href="{{ url_for('static',filename='css/style.css') }}?v=1.1">
+    <style>
+        .sidebar-section-header {
+            font-size: 0.7rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            color: #888888;
+            padding: 8px 0 4px 5px;
+            margin-top: 15px;
+            margin-bottom: 5px;
+            list-style: none;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        }
+        .sidebar-nav-item .nav-link {
+            padding: 8px 12px;
+            border-radius: 8px;
+            transition: all 0.2s ease;
+            font-size: 0.9rem;
+            display: flex;
+            align-items: center;
+        }
+        .sidebar-nav-item .nav-link:hover {
+            background: rgba(34, 197, 94, 0.1);
+            color: var(--primary-accent) !important;
+        }
+    </style>
 </head>
 
 <body>
@@ -58,67 +84,69 @@
              <button type="button" class="btn-close" style="filter: invert(1);" data-bs-dismiss="offcanvas" data-bs-target="#sidebarMenu" aria-label="Close"></button>
          </div>
 
-         <div class="offcanvas-body p-3 pt-0 pt-lg-3 flex-column">
+          <div class="offcanvas-body p-3 pt-0 pt-lg-3 flex-column">
             <ul class="nav flex-column w-100">
 
-                <li class="nav-item py-2 border-bottom border-secondary">
-                <a href="/admin/dashboard" class="nav-link text-white px-0">
-                    <i class="fa-solid fa-chart-pie me-2 text-light"></i>
-                    Dashboard
-                </a>
-            </li>
+                <!-- GENERAL SECTION -->
+                <li class="sidebar-section-header m-0" style="margin-top: 0px !important;">General</li>
+                <li class="nav-item sidebar-nav-item py-1">
+                    <a href="/admin/dashboard" class="nav-link text-white">
+                        <i class="fa-solid fa-chart-pie me-2 text-light"></i>
+                        Dashboard
+                    </a>
+                </li>
+                <li class="nav-item sidebar-nav-item py-1">
+                    <a href="/admin/analytics" class="nav-link text-white">
+                        <i class="fa-solid fa-chart-line me-2 text-info"></i>
+                        Analytics
+                    </a>
+                </li>
 
-            <li class="nav-item py-2 border-bottom border-secondary">
-                <a href="/admin/analytics" class="nav-link text-white px-0">
-                    <i class="fa-solid fa-chart-line me-2 text-info"></i>
-                    Analytics
-                </a>
-            </li>
+                <!-- CONTENT SECTION -->
+                <li class="sidebar-section-header">Content</li>
+                <li class="nav-item sidebar-nav-item py-1">
+                    <a href="/admin/upload" class="nav-link text-white">
+                        <i class="fa-solid fa-cloud-arrow-up me-2 text-success"></i>
+                        Upload Video
+                    </a>
+                </li>
+                <li class="nav-item sidebar-nav-item py-1">
+                    <a href="/admin/videos" class="nav-link text-white">
+                        <i class="fa-solid fa-film me-2 text-primary"></i>
+                        All Videos
+                    </a>
+                </li>
+                <li class="nav-item sidebar-nav-item py-1">
+                    <a href="/admin/telegram" class="nav-link text-white">
+                        <i class="fa-brands fa-telegram me-2 text-info"></i>
+                        Telegram Bot
+                    </a>
+                </li>
 
-            <li class="nav-item py-2 border-bottom border-secondary">
-                <a href="/admin/upload" class="nav-link text-white px-0">
-                    <i class="fa-solid fa-cloud-arrow-up me-2 text-success"></i>
-                    Upload Video
-                </a>
-            </li>
+                <!-- PAYOUTS & SETTINGS SECTION -->
+                <li class="sidebar-section-header">Payouts</li>
+                <li class="nav-item sidebar-nav-item py-1">
+                    <a href="/admin/billing" class="nav-link text-white">
+                        <i class="fa-solid fa-credit-card me-2 text-primary-green"></i>
+                        Billing & Payout
+                    </a>
+                </li>
+                <li class="nav-item sidebar-nav-item py-1">
+                    <a href="/admin/account" class="nav-link text-white">
+                        <i class="fa-solid fa-user me-2 text-warning"></i>
+                        Account
+                    </a>
+                </li>
 
-            <li class="nav-item py-2 border-bottom border-secondary">
-                <a href="/admin/videos" class="nav-link text-white px-0">
-                    <i class="fa-solid fa-film me-2 text-primary"></i>
-                    All Videos
-                </a>
-            </li>
+                <li class="nav-item sidebar-nav-item py-1 border-top border-secondary pt-3 mt-3">
+                    <a href="/admin/logout" class="nav-link text-white">
+                        <i class="fa-solid fa-right-from-bracket me-2 text-danger"></i>
+                        Logout
+                    </a>
+                </li>
 
-            <li class="nav-item py-2 border-bottom border-secondary">
-                <a href="/admin/telegram" class="nav-link text-white px-0">
-                    <i class="fa-brands fa-telegram me-2 text-info"></i>
-                    Telegram Bot
-                </a>
-            </li>
-
-            <li class="nav-item py-2 border-bottom border-secondary">
-                <a href="/admin/billing" class="nav-link text-white px-0">
-                    <i class="fa-solid fa-credit-card me-2 text-primary-green"></i>
-                    Billing & Payout
-                </a>
-            </li>
-
-            <li class="nav-item py-2 border-bottom border-secondary">
-                <a href="/admin/account" class="nav-link text-white px-0">
-                    <i class="fa-solid fa-user me-2 text-warning"></i>
-                    Account
-                </a>
-            </li>
-
-            <li class="nav-item py-2">
-                <a href="/admin/logout" class="nav-link text-white px-0">
-                    <i class="fa-solid fa-right-from-bracket me-2 text-light"></i>
-                    Logout
-                </a>
-            </li>
-
-        </ul>
-        </div>
+            </ul>
+          </div>
     </div>
 
     <!-- MAIN CONTENT -->

@@ -26,6 +26,21 @@
                     </div>
                     
                     <button type="submit" id="saveBtn" class="btn btn-success mt-3 w-100">Save Changes</button>
+                    
+                    <!-- Public Sharing Link Section -->
+                    {% if account and account.id %}
+                    <div class="mt-4 p-3 border border-secondary rounded" style="background-color: rgba(255, 255, 255, 0.03);">
+                        <label class="form-label text-success fw-bold"><i class="fa-solid fa-share-nodes me-2"></i>Share Your Channel Page</label>
+                        <div class="input-group">
+                            <input type="text" id="shareUrl" class="form-control bg-secondary text-white border-secondary" 
+                                   value="https://diskly.in/admin/{{ account.id }}" readonly>
+                            <button class="btn btn-outline-success" type="button" onclick="copyShareUrl()">
+                                <i class="fa-solid fa-copy me-1"></i> Copy Link
+                            </button>
+                        </div>
+                        <small class="text-muted mt-2 d-block"><i class="fa-solid fa-circle-info me-1"></i>Share this link to redirect users directly to your channel in the Diskly App.</small>
+                    </div>
+                    {% endif %}
                 </div>
             </div>
         </form>
@@ -77,5 +92,25 @@
             submitBtn.innerText = 'Save Changes';
         }
     });
+
+    function copyShareUrl() {
+        const shareUrlInput = document.getElementById('shareUrl');
+        if (!shareUrlInput) return;
+        shareUrlInput.select();
+        shareUrlInput.setSelectionRange(0, 99999); /* For mobile devices */
+        navigator.clipboard.writeText(shareUrlInput.value);
+        
+        // Visual feedback
+        const copyBtn = document.querySelector('button[onclick="copyShareUrl()"]');
+        const originalHtml = copyBtn.innerHTML;
+        copyBtn.innerHTML = '<i class="fa-solid fa-check me-1"></i> Copied!';
+        copyBtn.classList.remove('btn-outline-success');
+        copyBtn.classList.add('btn-success');
+        setTimeout(() => {
+            copyBtn.innerHTML = originalHtml;
+            copyBtn.classList.remove('btn-success');
+            copyBtn.classList.add('btn-outline-success');
+        }, 2000);
+    }
 </script>
 {% endblock %}

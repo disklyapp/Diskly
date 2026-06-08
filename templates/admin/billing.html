@@ -21,7 +21,7 @@
                 </div>
                 <div class="position-relative z-1">
                     <p class="text-light opacity-75 text-uppercase small fw-bold mb-2">Available Balance</p>
-                    <h2 class="text-white fw-bold mb-0" id="currentBalanceDisplay">${{ account.get('balance', 0) | round(2) }}</h2>
+                    <h2 class="text-white fw-bold mb-0" id="currentBalanceDisplay">${{ "%.2f" | format(account.get('balance', 0) | float) }}</h2>
                     <p class="text-light opacity-50 small mt-2 mb-0">Ready for instant withdrawal</p>
                 </div>
             </div>
@@ -34,7 +34,7 @@
                 </div>
                 <div class="position-relative z-1">
                     <p class="text-light opacity-75 text-uppercase small fw-bold mb-2">Minimum Withdrawal Limit</p>
-                    <h2 class="text-white fw-bold mb-0">${{ account.get('minimumPayoutThreshold', 10.0) }}</h2>
+                    <h2 class="text-white fw-bold mb-0">${{ "%.2f" | format(account.get('minimumPayoutThreshold', 10.0) | float) }}</h2>
                     <p class="text-light opacity-50 small mt-2 mb-0">Configured by Superadmin</p>
                 </div>
             </div>
@@ -96,7 +96,7 @@
                             <span class="input-group-text bg-dark text-white border-secondary border-opacity-50">$</span>
                             <input type="number" step="0.01" min="0.01" class="form-control bg-dark text-white border-secondary border-opacity-50 shadow-none" id="withdrawAmount" placeholder="0.00" required>
                         </div>
-                        <div class="form-text text-light opacity-50 small mt-1">Must be at least ${{ account.get('minimumPayoutThreshold', 10.0) }} and not exceed your balance.</div>
+                        <div class="form-text text-light opacity-50 small mt-1">Must be at least ${{ "%.2f" | format(account.get('minimumPayoutThreshold', 10.0) | float) }} and not exceed your balance.</div>
                     </div>
 
                     <button type="submit" class="btn btn-green-custom w-100 py-2.5 rounded-pill fw-bold" id="withdrawSubmitBtn">
@@ -127,7 +127,7 @@
                                 {% for p in payouts %}
                                     <tr class="border-bottom border-secondary border-opacity-25">
                                         <td class="py-3 text-start text-light text-nowrap opacity-90">{{ p.createdAt.split('T')[0] if 'T' in p.createdAt else p.createdAt }}</td>
-                                        <td class="py-3 text-center fw-semibold text-white">${{ p.amount | round(2) }}</td>
+                                        <td class="py-3 text-center fw-semibold text-white">${{ "%.2f" | format(p.amount | float) }}</td>
                                         <td class="py-3 text-center text-uppercase text-light opacity-75 small">{{ p.paymentMethod }}</td>
                                         <td class="py-3 text-center text-light opacity-75 small text-truncate" style="max-width: 120px;" title="{{ p.paymentDetails }}">{{ p.paymentDetails }}</td>
                                         <td class="py-3 text-end">

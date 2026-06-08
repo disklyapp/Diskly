@@ -59,10 +59,11 @@
                     <h5 id="detailTitle"></h5>
                     <p id="detailDesc" class="text-muted"></p>
 
-                    <div class="d-flex gap-3 mb-3">
+                    <div class="d-flex gap-3 mb-3 flex-wrap">
                         <span id="detailViews"></span>
                         <span id="detailLikes"></span>
                         <span id="detailDownloads"></span>
+                        <span id="detailSize"></span>
                     </div>
 
                     <div class="d-flex gap-2 mb-2">
@@ -108,12 +109,28 @@
 <script>
     const videos = {{ videos | tojson | safe }};
 
+    function formatBytes(bytes, decimals = 2) {
+        if (!bytes || bytes === 0) return '0 Bytes';
+        const k = 1024;
+        const dm = decimals < 0 ? 0 : decimals;
+        const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB'];
+        const i = Math.floor(Math.log(bytes) / Math.log(k));
+        return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i];
+    }
+
+    function populateEditModal(id) {
+        const v = videos.find(vid => vid.id == id);
+        if (!v) return;
+        document.getElementById("editVideoId").value = v.id;
+        document.getElementById("editTitle").value = v.title;
+        document.getElementById("editDescription").value = v.description || '';
+    }
+
     function renderVideos(videoList) {
         const container = document.getElementById("videoList");
         container.innerHTML = "";
 
         videos.forEach(video => {
-
             const html = `
         <div class="col-12 video-item"
             data-title="${(video.title || '').toLowerCase()}"
@@ -146,10 +163,11 @@
                            ${(video.description || 'No description available.').slice(0, 90)}...
                         </p>
 
-                        <div class="d-flex gap-3 small text-white-50 mb-2" style="font-size:12px;">
+                        <div class="d-flex gap-3 small text-white-50 mb-2 flex-wrap" style="font-size:12px;">
                             <span>👁 ${video.views || 0} Views</span>
                             <span>❤️ ${video.likes || 0} Likes</span>
                             <span>⬇ ${video.bookmarks || 0} Downloads</span>
+                            <span>💾 ${formatBytes(video.size || 0)}</span>
                         </div>
 
                         <!-- Copy Box -->
@@ -168,11 +186,41 @@
 
                     </div>
 
-                    <!-- Button -->
-                    <div class="col-md-2 text-md-end">
-                        <button class="btn btn-primary-green btn-sm px-3">
-                            Open
-                        </button>
+                    <!-- 3-Dot Dropdown -->
+                    <div class="col-md-2 text-md-end" onclick="event.stopPropagation();">
+                        <div class="dropdown">
+                            <button class="btn btn-outline-light btn-sm rounded-circle" type="button" data-bs-toggle="dropdown" aria-expanded="false" style="width: 32px; height: 32px; padding: 0;">
+                                <i class="fa-solid fa-ellipsis-vertical"></i>
+                            </button>
+                            <ul class="dropdown-menu dropdown-menu-end dropdown-menu-dark">
+                                <li>
+                                    <button class="dropdown-item" onclick="loadVideo('${video.id}')">
+                                        <i class="fa-solid fa-play me-2 text-success"></i>Open Preview
+                                    </button>
+                                </li>
+                                <li>
+                                    <button class="dropdown-item" onclick="window.open('${video.streamUrl}', '_blank')">
+                                        <i class="fa-solid fa-up-right-from-square me-2 text-info"></i>Open File
+                                    </button>
+                                </li>
+                                <li>
+                                    <button class="dropdown-item" onclick="copyDiskly('${video.downloadKey}', this.closest('.video-item').querySelector('.badge'))">
+                                        <i class="fa-solid fa-copy me-2 text-primary"></i>Copy Link
+                                    </button>
+                                </li>
+                                <li>
+                                    <button class="dropdown-item" data-bs-toggle="modal" data-bs-target="#editModal" onclick="populateEditModal('${video.id}')">
+                                        <i class="fa-solid fa-pen me-2 text-warning"></i>Edit
+                                    </button>
+                                </li>
+                                <li><hr class="dropdown-divider"></li>
+                                <li>
+                                    <button class="dropdown-item text-danger" onclick="deleteVideo('${video.id}')">
+                                        <i class="fa-solid fa-trash me-2"></i>Delete
+                                    </button>
+                                </li>
+                            </ul>
+                        </div>
                     </div>
 
                 </div>
@@ -184,7 +232,6 @@
             container.innerHTML += html;
         });
     }
-
 
     function loadVideo(id) {
         try {
@@ -202,6 +249,7 @@
 
             if (v.streamUrl) {
                 video.style.display = "block";
+                video.style.maxHeight = "240px";
                 thumb.style.display = "none";
                 video.src = v.streamUrl;
             } else {
@@ -215,6 +263,7 @@
             document.getElementById("detailViews").innerText = "👁 " + (v.views || 0);
             document.getElementById("detailLikes").innerText = "❤️ " + (v.likes || 0);
             document.getElementById("detailDownloads").innerText = "⬇ " + (v.bookmarks || 0);
+            document.getElementById("detailSize").innerText = "💾 " + formatBytes(v.size || 0);
 
             document.getElementById("copyBtn").onclick = () => {
                 navigator.clipboard.writeText("https://diskly.in/" + v.downloadKey);
