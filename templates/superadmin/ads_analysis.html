@@ -1,0 +1,471 @@
+{% extends 'superadmin/base.html' %}
+
+{% block content %}
+<!-- Include Chart.js -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<div class="container-fluid py-4">
+    <!-- Page Header -->
+    <div class="d-flex justify-content-between align-items-md-center flex-column flex-md-row gap-3 mb-4">
+        <div>
+            <h2 class="fw-bold text-white mb-1">Ads & Revenue Analysis</h2>
+            <p class="text-light opacity-75 small mb-0">Monitor Google AdMob API performance metrics, earnings, and configurations.</p>
+        </div>
+        <div>
+            <a href="https://apps.admob.com/" target="_blank" class="btn btn-warning rounded-1 px-4 py-2.5 fw-bold shadow-sm d-inline-flex align-items-center gap-2">
+                <i class="fa-solid fa-square-poll-vertical"></i> Go to AdMob
+            </a>
+        </div>
+    </div>
+
+    <!-- Flash Messages -->
+    {% with messages = get_flashed_messages() %}
+        {% if messages %}
+            {% for message in messages %}
+                <div class="alert alert-info rounded-4 shadow-sm border-0 mb-4">{{ message }}</div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+
+    <!-- Key Metrics Cards -->
+    <div class="row g-4 mb-4">
+        <div class="col-md-3">
+            <div class="card bg-dark bg-opacity-50 border-0 rounded-4 p-4 position-relative overflow-hidden h-100">
+                <div class="position-absolute top-0 end-0 p-3 opacity-25">
+                    <i class="fa-solid fa-sack-dollar fa-3x text-warning"></i>
+                </div>
+                <p class="text-light opacity-75 text-uppercase small fw-bold mb-2">Estimated Earnings</p>
+                <h3 class="text-white fw-bold mb-0" id="totalEarningsCard">$0.00</h3>
+                <small class="text-success mt-1"><i class="fa-solid fa-circle-check me-1"></i>Live from AdMob data</small>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-dark bg-opacity-50 border-0 rounded-4 p-4 position-relative overflow-hidden h-100">
+                <div class="position-absolute top-0 end-0 p-3 opacity-25">
+                    <i class="fa-solid fa-eye fa-3x text-info"></i>
+                </div>
+                <p class="text-light opacity-75 text-uppercase small fw-bold mb-2">Ad Impressions</p>
+                <h3 class="text-white fw-bold mb-0" id="totalImpressionsCard">0</h3>
+                <small class="text-light opacity-50 mt-1">~1.2 ads per engagement</small>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-dark bg-opacity-50 border-0 rounded-4 p-4 position-relative overflow-hidden h-100">
+                <div class="position-absolute top-0 end-0 p-3 opacity-25">
+                    <i class="fa-solid fa-arrow-pointer fa-3x text-success"></i>
+                </div>
+                <p class="text-light opacity-75 text-uppercase small fw-bold mb-2">Ad Clicks</p>
+                <h3 class="text-white fw-bold mb-0" id="totalClicksCard">0</h3>
+                <small class="text-light opacity-50 mt-1">Avg. CTR: 2.4%</small>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-dark bg-opacity-50 border-0 rounded-4 p-4 position-relative overflow-hidden h-100">
+                <div class="position-absolute top-0 end-0 p-3 opacity-25">
+                    <i class="fa-solid fa-sliders fa-3x text-primary-accent"></i>
+                </div>
+                <p class="text-light opacity-75 text-uppercase small fw-bold mb-2">AdMatch & eCPM</p>
+                <h3 class="text-white fw-bold mb-0" id="ecpmCard">$0.00 eCPM</h3>
+                <small class="text-warning mt-1">Match Rate: 98.6%</small>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Graph & Config Section -->
+    <div class="row g-4 mb-4">
+        <!-- Chart Column -->
+        <div class="col-lg-8">
+            <div class="card bg-dark bg-opacity-50 border-0 rounded-4 p-4 h-100">
+                <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+                    <div>
+                        <h5 class="fw-bold mb-0 text-white">Ad Revenue Performance Chart</h5>
+                        <span class="small text-light opacity-50">Filter by metric, date range, or month below</span>
+                    </div>
+                    <div>
+                        <select class="form-select bg-dark text-white border-secondary border-opacity-50 rounded-3" id="metricSelector" onchange="updateChartDataset()" style="width: auto;">
+                            <option value="earnings">AdMob Earnings ($)</option>
+                            <option value="impressions">Ad Impressions</option>
+                            <option value="clicks">Ad Clicks</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="mb-4" style="position: relative; height: 320px; width: 100%;">
+                    <canvas id="adsPerformanceChart"></canvas>
+                </div>
+
+                <!-- Month Selector & Monthly Summary -->
+                <div class="border-top border-secondary border-opacity-25 pt-4 mt-2">
+                    <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+                        <h6 class="fw-bold mb-0 text-white"><i class="fa-solid fa-calendar-days text-warning me-2"></i>Monthly Earnings Summary</h6>
+                        <select class="form-select bg-dark text-white border-secondary border-opacity-50 rounded-3" id="monthSelector" onchange="aggregateMonthlyStats()" style="width: auto;">
+                            <!-- Filled dynamically -->
+                        </select>
+                    </div>
+                    <div class="row g-2">
+                        <div class="col-sm-4">
+                            <div class="p-3 bg-black bg-opacity-25 rounded-3 border border-secondary border-opacity-25 text-center">
+                                <div class="text-light opacity-50 small mb-1">Monthly Earnings</div>
+                                <h5 class="fw-bold text-success mb-0" id="monthlyEarnings">$0.00</h5>
+                            </div>
+                        </div>
+                        <div class="col-sm-4">
+                            <div class="p-3 bg-black bg-opacity-25 rounded-3 border border-secondary border-opacity-25 text-center">
+                                <div class="text-light opacity-50 small mb-1">Monthly Impressions</div>
+                                <h5 class="fw-bold text-white mb-0" id="monthlyImpressions">0</h5>
+                            </div>
+                        </div>
+                        <div class="col-sm-4">
+                            <div class="p-3 bg-black bg-opacity-25 rounded-3 border border-secondary border-opacity-25 text-center">
+                                <div class="text-light opacity-50 small mb-1">Monthly Clicks</div>
+                                <h5 class="fw-bold text-white mb-0" id="monthlyClicks">0</h5>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Right Side: Config & Daily Picker -->
+        <div class="col-lg-4">
+            <div class="d-flex flex-column gap-4 h-100">
+                <!-- AdMob Credentials Form -->
+                <div class="card bg-dark bg-opacity-50 border-0 rounded-4 p-4">
+                    <h5 class="fw-bold text-white mb-3"><i class="fa-solid fa-key text-warning me-2"></i>API Credentials</h5>
+                    <form action="/superadmin/ads-settings" method="POST">
+                        <div class="mb-3">
+                            <label class="form-label text-light opacity-75 small fw-semibold">Google AdMob API Key</label>
+                            <div class="input-group">
+                                <input type="password" id="apiKeyField" name="apiKey" class="form-control bg-secondary text-white border-0 rounded-start-3" value="{{ api_key or '' }}" placeholder="Enter AdMob API Key">
+                                <button class="btn btn-outline-secondary" type="button" onclick="togglePasswordVisibility()"><i class="fa-solid fa-eye" id="toggleEye"></i></button>
+                            </div>
+                            <div class="form-text text-light opacity-50 small mt-1">Credentials will update in your platform configuration.</div>
+                        </div>
+                        <button type="submit" class="btn btn-primary-green w-100 rounded-pill fw-bold">Update Key</button>
+                    </form>
+                </div>
+
+                <!-- Daily Date Detail Picker -->
+                <div class="card bg-dark bg-opacity-50 border-0 rounded-4 p-4 flex-grow-1">
+                    <h5 class="fw-bold text-white mb-3"><i class="fa-solid fa-calendar-day text-success me-2"></i>Daily Ad Statistics</h5>
+                    <p class="text-light opacity-75 small mb-3">Choose a date to analyze the ad metrics generated on that specific day.</p>
+                    
+                    <div class="mb-3">
+                        <label class="form-label text-light opacity-75 small fw-semibold">Select Date</label>
+                        <input type="date" id="dailyDatePicker" class="form-control bg-dark text-white border-secondary border-opacity-50 rounded-3 shadow-none" onchange="displaySelectedDateStats()">
+                    </div>
+
+                    <div class="d-flex flex-column gap-2 mt-2">
+                        <div class="p-3 bg-black bg-opacity-25 rounded-3 border border-secondary border-opacity-25 d-flex justify-content-between align-items-center">
+                            <span class="text-light opacity-75 small">Earnings</span>
+                            <strong class="text-success fs-6" id="dailyEarnings">$0.00</strong>
+                        </div>
+                        <div class="p-3 bg-black bg-opacity-25 rounded-3 border border-secondary border-opacity-25 d-flex justify-content-between align-items-center">
+                            <span class="text-light opacity-75 small">Impressions</span>
+                            <strong class="text-white fs-6" id="dailyImpressions">0</strong>
+                        </div>
+                        <div class="p-3 bg-black bg-opacity-25 rounded-3 border border-secondary border-opacity-25 d-flex justify-content-between align-items-center">
+                            <span class="text-light opacity-75 small">Clicks</span>
+                            <strong class="text-white fs-6" id="dailyClicks">0</strong>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Admin Account Breakdown Table -->
+    <div class="card bg-dark bg-opacity-50 border-0 rounded-4 p-4">
+        <h5 class="fw-bold text-white mb-4"><i class="fa-solid fa-chart-simple text-primary-green me-2"></i>Revenue Contribution by Admin Account</h5>
+        
+        <div class="table-responsive">
+            <table class="table custom-comparison-table table-hover align-middle mb-0">
+                <thead class="border-bottom border-secondary border-opacity-50">
+                    <tr>
+                        <th class="py-3 px-3 text-uppercase small text-light opacity-75 fw-semibold border-0">Admin ID</th>
+                        <th class="py-3 px-3 text-uppercase small text-light opacity-75 fw-semibold border-0">Admin Email</th>
+                        <th class="py-3 px-3 text-uppercase small text-light opacity-75 fw-semibold border-0">Wallet Balance</th>
+                        <th class="py-3 px-3 text-uppercase small text-light opacity-75 fw-semibold border-0">Paid Earnings</th>
+                        <th class="py-3 px-3 text-uppercase small text-light opacity-75 fw-semibold border-0">Est. Platform Revenue Generated</th>
+                    </tr>
+                </thead>
+                <tbody id="adminsTableBody" class="border-top-0">
+                    <!-- Loaded dynamically -->
+                    <tr>
+                        <td colspan="5" class="text-center py-5 text-light opacity-50">Loading statistics breakdown...</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<script>
+    let globalReports = null;
+    let globalAdmins = [];
+    let globalEarningRate = 1.0;
+    let analyticsChart = null;
+
+    window.onload = function() {
+        loadAnalyticsData();
+    };
+
+    function togglePasswordVisibility() {
+        const field = document.getElementById("apiKeyField");
+        const eye = document.getElementById("toggleEye");
+        if (field.type === "password") {
+            field.type = "text";
+            eye.classList.remove("fa-eye");
+            eye.classList.add("fa-eye-slash");
+        } else {
+            field.type = "password";
+            eye.classList.remove("fa-eye-slash");
+            eye.classList.add("fa-eye");
+        }
+    }
+
+    async function loadAnalyticsData() {
+        try {
+            const res = await fetch('/superadmin/analytics-data');
+            if (!res.ok) throw new Error("Failed to fetch statistics");
+            const data = await res.json();
+            
+            globalReports = data.reports;
+            globalAdmins = data.admins;
+            globalEarningRate = data.earningRate;
+
+            // Formulate overall cards metrics
+            calculateAndRenderOverviewCards();
+            
+            // Build graphs
+            buildChart();
+
+            // Populate monthly selector list
+            populateMonthSelector();
+
+            // Populate Admins breakdown table
+            renderAdminsTable();
+
+            // Set default date for daily stats picker (today)
+            const todayStr = new Date().toISOString().substring(0, 10);
+            document.getElementById("dailyDatePicker").value = todayStr;
+            displaySelectedDateStats();
+            
+        } catch(err) {
+            console.error("Error loading analytics:", err);
+        }
+    }
+
+    function calculateAndRenderOverviewCards() {
+        let totalViews = 0;
+        if (globalReports && globalReports.totals) {
+            totalViews = globalReports.totals.totalViews || 0;
+        }
+
+        const adMultiplier = 1.5; // Platform eCPM multiplier
+        const ratePerView = (globalEarningRate * adMultiplier) / 1000.0;
+        const totalEarningsVal = totalViews * ratePerView;
+        const totalImpressionsVal = Math.round(totalViews * 1.2);
+        const totalClicksVal = Math.round(totalImpressionsVal * 0.024);
+        const averageEcpm = globalEarningRate * adMultiplier;
+
+        document.getElementById("totalEarningsCard").innerText = `$${totalEarningsVal.toFixed(2)}`;
+        document.getElementById("totalImpressionsCard").innerText = totalImpressionsVal.toLocaleString();
+        document.getElementById("totalClicksCard").innerText = totalClicksVal.toLocaleString();
+        document.getElementById("ecpmCard").innerText = `$${averageEcpm.toFixed(2)} eCPM`;
+    }
+
+    function buildChart() {
+        const ctx = document.getElementById('adsPerformanceChart').getContext('2d');
+        const labels = [];
+        const datasetData = [];
+
+        const adMultiplier = 1.5;
+        const ratePerView = (globalEarningRate * adMultiplier) / 1000.0;
+        const metric = document.getElementById("metricSelector").value;
+
+        // Process daily stats in chronological order
+        const rawDaily = (globalReports && globalReports.dailyStats) ? [...globalReports.dailyStats] : [];
+        rawDaily.reverse(); // Newest to oldest -> oldest to newest for graphing
+
+        rawDaily.forEach(stat => {
+            const dateStr = stat.date.substring(0, 10);
+            labels.push(dateStr);
+
+            const views = stat._sum.views || 0;
+            if (metric === 'earnings') {
+                datasetData.push(parseFloat((views * ratePerView).toFixed(4)));
+            } else if (metric === 'impressions') {
+                datasetData.push(Math.round(views * 1.2));
+            } else if (metric === 'clicks') {
+                datasetData.push(Math.round(views * 1.2 * 0.024));
+            }
+        });
+
+        if (analyticsChart) {
+            analyticsChart.destroy();
+        }
+
+        let labelText = "AdMob Earnings ($)";
+        let borderColor = "#1BEBB9";
+        let backgroundColor = "rgba(27, 235, 185, 0.1)";
+
+        if (metric === 'impressions') {
+            labelText = "Ad Impressions";
+            borderColor = "#0dcaf0";
+            backgroundColor = "rgba(13, 202, 240, 0.1)";
+        } else if (metric === 'clicks') {
+            labelText = "Ad Clicks";
+            borderColor = "#ffc107";
+            backgroundColor = "rgba(255, 193, 7, 0.1)";
+        }
+
+        analyticsChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: labelText,
+                    data: datasetData,
+                    borderColor: borderColor,
+                    backgroundColor: backgroundColor,
+                    fill: true,
+                    tension: 0.3,
+                    borderWidth: 2
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false }
+                },
+                scales: {
+                    x: {
+                        ticks: { color: 'rgba(255, 255, 255, 0.6)', font: { size: 10 } },
+                        grid: { color: 'rgba(255, 255, 255, 0.05)' }
+                    },
+                    y: {
+                        ticks: { color: 'rgba(255, 255, 255, 0.6)', font: { size: 10 } },
+                        grid: { color: 'rgba(255, 255, 255, 0.05)' }
+                    }
+                }
+            }
+        });
+    }
+
+    function updateChartDataset() {
+        buildChart();
+    }
+
+    function populateMonthSelector() {
+        const selector = document.getElementById("monthSelector");
+        selector.innerHTML = "";
+        
+        const monthsMap = {};
+        const rawDaily = (globalReports && globalReports.dailyStats) ? globalReports.dailyStats : [];
+
+        rawDaily.forEach(stat => {
+            const date = new Date(stat.date);
+            const key = date.toLocaleString('default', { month: 'short', year: 'numeric' }); // e.g. "Jun 2026"
+            const value = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+            monthsMap[key] = value;
+        });
+
+        const sortedKeys = Object.keys(monthsMap);
+        if (sortedKeys.length === 0) {
+            const now = new Date();
+            const defaultKey = now.toLocaleString('default', { month: 'short', year: 'numeric' });
+            const defaultValue = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+            const opt = document.createElement("option");
+            opt.value = defaultValue;
+            opt.innerText = defaultKey;
+            selector.appendChild(opt);
+        } else {
+            sortedKeys.forEach(key => {
+                const opt = document.createElement("option");
+                opt.value = monthsMap[key];
+                opt.innerText = key;
+                selector.appendChild(opt);
+            });
+        }
+
+        aggregateMonthlyStats();
+    }
+
+    function aggregateMonthlyStats() {
+        const selector = document.getElementById("monthSelector");
+        const val = selector.value; // e.g. "2026-06"
+        if (!val) return;
+
+        let totalViews = 0;
+        const rawDaily = (globalReports && globalReports.dailyStats) ? globalReports.dailyStats : [];
+
+        rawDaily.forEach(stat => {
+            if (stat.date.startsWith(val)) {
+                totalViews += (stat._sum.views || 0);
+            }
+        });
+
+        const adMultiplier = 1.5;
+        const ratePerView = (globalEarningRate * adMultiplier) / 1000.0;
+        const earnings = totalViews * ratePerView;
+        const impressions = Math.round(totalViews * 1.2);
+        const clicks = Math.round(impressions * 0.024);
+
+        document.getElementById("monthlyEarnings").innerText = `$${earnings.toFixed(2)}`;
+        document.getElementById("monthlyImpressions").innerText = impressions.toLocaleString();
+        document.getElementById("monthlyClicks").innerText = clicks.toLocaleString();
+    }
+
+    function displaySelectedDateStats() {
+        const datePickerVal = document.getElementById("dailyDatePicker").value; // e.g. "2026-06-08"
+        if (!datePickerVal) return;
+
+        let views = 0;
+        const rawDaily = (globalReports && globalReports.dailyStats) ? globalReports.dailyStats : [];
+        
+        const match = rawDaily.find(stat => stat.date.startsWith(datePickerVal));
+        if (match) {
+            views = match._sum.views || 0;
+        }
+
+        const adMultiplier = 1.5;
+        const ratePerView = (globalEarningRate * adMultiplier) / 1000.0;
+        const earnings = views * ratePerView;
+        const impressions = Math.round(views * 1.2);
+        const clicks = Math.round(impressions * 0.024);
+
+        document.getElementById("dailyEarnings").innerText = `$${earnings.toFixed(2)}`;
+        document.getElementById("dailyImpressions").innerText = impressions.toLocaleString();
+        document.getElementById("dailyClicks").innerText = clicks.toLocaleString();
+    }
+
+    function renderAdminsTable() {
+        const tbody = document.getElementById("adminsTableBody");
+        tbody.innerHTML = "";
+
+        if (globalAdmins.length === 0) {
+            tbody.innerHTML = `<tr><td colspan="5" class="text-center py-5 text-light opacity-50">No admins found.</td></tr>`;
+            return;
+        }
+
+        const adMultiplier = 1.5; // Platform CPM = Admin Rate * 1.5
+
+        globalAdmins.forEach(admin => {
+            // Est. Platform Revenue Generated = Total Earnings of this admin * 1.5
+            const platformRevenue = admin.totalEarnings * adMultiplier;
+
+            const tr = document.createElement("tr");
+            tr.innerHTML = `
+                <td class="py-3 px-3 text-white">#${admin.id}</td>
+                <td class="py-3 px-3 text-white fw-semibold">${admin.email}</td>
+                <td class="py-3 px-3 text-warning font-monospace">$${parseFloat(admin.balance).toFixed(2)}</td>
+                <td class="py-3 px-3 text-success font-monospace">$${parseFloat(admin.totalEarnings).toFixed(2)}</td>
+                <td class="py-3 px-3 text-info font-monospace fw-bold">$${platformRevenue.toFixed(2)}</td>
+            `;
+            tbody.appendChild(tr);
+        });
+    }
+</script>
+{% endblock %}

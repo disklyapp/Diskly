@@ -737,6 +737,84 @@ def superadmin_notifications():
         
     return render_template("superadmin/notifications.html", notifications=notifications_data)
 
+def update_env_variable(key, value):
+    env_path = '.env'
+    if not os.path.exists(env_path):
+        with open(env_path, 'w') as f:
+            f.write(f"{key}=\"{value}\"\n")
+        return
+        
+    lines = []
+    replaced = False
+    with open(env_path, 'r') as f:
+        lines = f.readlines()
+        
+    for i, line in enumerate(lines):
+        if line.strip().startswith(f"{key}=") or line.strip().startswith(f"{key} ="):
+            lines[i] = f"{key}=\"{value}\"\n"
+            replaced = True
+            break
+            
+    if not replaced:
+        lines.append(f"\n{key}=\"{value}\"\n")
+        
+    with open(env_path, 'w') as f:
+        f.writelines(lines)
+    os.environ[key] = value
+
+@app.route('/superadmin/ads-analysis', methods=['GET'])
+def superadmin_ads_analysis():
+    if 'superadmin_token' not in session:
+        return redirect('/superadmin/login')
+    
+    api_key = os.environ.get("api") or ""
+    return render_template("superadmin/ads_analysis.html", api_key=api_key)
+
+@app.route('/superadmin/ads-settings', methods=['POST'])
+def superadmin_ads_settings():
+    if 'superadmin_token' not in session:
+        return redirect('/superadmin/login')
+        
+    new_key = request.form.get('apiKey', '').strip()
+    try:
+        update_env_variable("api", new_key)
+        flash("AdMob API Key updated successfully.")
+    except Exception as e:
+        flash(f"Failed to update key: {str(e)}")
+        
+    return redirect('/superadmin/ads-analysis')
+
+@app.route('/superadmin/analytics-data')
+def superadmin_analytics_data():
+    if 'superadmin_token' not in session:
+        return {"error": "Unauthorized"}, 401
+        
+    headers = {"Authorization": f"Bearer {session['superadmin_token']}"}
+    try:
+        res_rep = requests.get(f"{API_BASE_URL}/api/superadmin/reports", headers=headers)
+        if res_rep.status_code != 200:
+            return {"error": "Failed to fetch reports"}, res_rep.status_code
+        reports = res_rep.json()
+        
+        res_admins = requests.get(f"{API_BASE_URL}/api/superadmin/admins", headers=headers)
+        admins = []
+        if res_admins.status_code == 200:
+            admins = res_admins.json()
+            
+        res_settings = requests.get(f"{API_BASE_URL}/api/superadmin/settings", headers=headers)
+        earning_rate = 1.0
+        if res_settings.status_code == 200:
+            earning_rate = res_settings.json().get('earningRatePer1000Views', 1.0)
+            
+        return {
+            "reports": reports,
+            "admins": admins,
+            "earningRate": earning_rate,
+            "apiKey": os.environ.get("api", "")
+        }, 200
+    except Exception as e:
+        return {"error": str(e)}, 500
+
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 5000)))
 
