@@ -63,6 +63,8 @@
             border-color: var(--primary-accent);
         }
     </style>
+    <!-- Google Identity Services -->
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
 </head>
 <body>
     <!-- Navbar (Simplified for login page) -->
@@ -138,6 +140,35 @@
                     <button type="submit" class="btn btn-primary-green btn-lg px-4 py-3 rounded-pill fw-bold w-100 shadow-sm d-flex justify-content-center align-items-center gap-2">
                         Sign In <i class="fa-solid fa-arrow-right-to-bracket"></i>
                     </button>
+
+                    {% if google_client_id %}
+                    <!-- Google Sign-In Divider -->
+                    <div class="d-flex align-items-center my-4">
+                        <hr class="flex-grow-1 border-secondary border-opacity-50 m-0">
+                        <span class="px-3 text-light opacity-50 small fw-bold">OR</span>
+                        <hr class="flex-grow-1 border-secondary border-opacity-50 m-0">
+                    </div>
+
+                    <!-- Google Sign-In Button Container -->
+                    <div class="d-flex justify-content-center w-100 mb-3">
+                        <div id="g_id_onload"
+                             data-client_id="{{ google_client_id }}"
+                             data-context="signin"
+                             data-ux_mode="popup"
+                             data-callback="handleCredentialResponse"
+                             data-auto_prompt="false">
+                        </div>
+                        <div class="g_id_signin w-100"
+                             data-type="standard"
+                             data-shape="pill"
+                             data-theme="outline"
+                             data-text="signin_with"
+                             data-size="large"
+                             data-logo_alignment="left"
+                             data-width="354">
+                        </div>
+                    </div>
+                    {% endif %}
                     
                     <div class="text-center mt-4">
                         <p class="text-light opacity-75 small mb-0">Don't have an account? <a href="/admin/signup" class="text-highlight text-decoration-none fw-bold hover-underline">Sign up</a></p>
@@ -172,6 +203,48 @@
                     themeBtn.innerHTML = theme === 'dark' ? '<i class="fa-solid fa-sun"></i>' : '<i class="fa-solid fa-moon"></i>';
                 }
             }
+
+            // Google Sign-In Callback
+            window.handleCredentialResponse = function(response) {
+                const idToken = response.credential;
+                
+                // Show a loading/signing in alert
+                const alertContainer = document.querySelector('.login-card');
+                const loadingDiv = document.createElement('div');
+                loadingDiv.className = 'alert alert-info text-center mt-3';
+                loadingDiv.innerText = 'Authenticating with Google...';
+                alertContainer.insertBefore(loadingDiv, alertContainer.firstChild);
+
+                fetch('/admin/google-login', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ idToken: idToken })
+                })
+                .then(res => res.json().then(data => ({ status: res.status, data })))
+                .then(result => {
+                    loadingDiv.remove();
+                    if (result.status === 200 && result.data.success) {
+                        window.location.href = '/admin/dashboard';
+                    } else {
+                        const errDiv = document.createElement('div');
+                        errDiv.className = 'alert alert-danger text-center mt-3';
+                        errDiv.innerText = result.data.error || 'Google Login failed.';
+                        alertContainer.insertBefore(errDiv, alertContainer.firstChild);
+                        setTimeout(() => errDiv.remove(), 5000);
+                    }
+                })
+                .catch(err => {
+                    loadingDiv.remove();
+                    console.error('Google auth error:', err);
+                    const errDiv = document.createElement('div');
+                    errDiv.className = 'alert alert-danger text-center mt-3';
+                    errDiv.innerText = 'Server connection failed.';
+                    alertContainer.insertBefore(errDiv, alertContainer.firstChild);
+                    setTimeout(() => errDiv.remove(), 5000);
+                });
+            };
         });
     </script>
 </body>

@@ -202,7 +202,33 @@ def asset_links():
         json.dumps(data),
         mimetype='application/json'
     )
+@app.context_processor
+def inject_google_client_id():
+    return dict(google_client_id=os.environ.get("GOOGLE_CLIENT_ID", ""))
 
+@app.route('/admin/google-login', methods=['POST'])
+def google_login():
+    req_data = request.json
+    id_token = req_data.get('idToken') if req_data else None
+    if not id_token:
+        return {"error": "Missing Google ID Token"}, 400
+
+    api_url = f"{API_BASE_URL}/api/admin/google-login"
+    try:
+        response = requests.post(api_url, json={"idToken": id_token})
+        if response.status_code == 200:
+            data = response.json()
+            session['token'] = data['token']
+            session['admin_email'] = data['admin']['email']
+            return {"success": True}, 200
+        else:
+            try:
+                err_msg = response.json().get("error", "Google login failed")
+            except:
+                err_msg = "Google login failed"
+            return {"error": err_msg}, response.status_code
+    except Exception as e:
+        return {"error": "Server connection failed"}, 500
 
 
 @app.route('/admin/login', methods=['POST','GET'])
