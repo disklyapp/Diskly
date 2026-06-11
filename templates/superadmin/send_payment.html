@@ -1,0 +1,106 @@
+{% extends "superadmin/base.html" %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="d-flex justify-content-between align-items-md-center flex-column flex-md-row gap-3 mb-4">
+                <div>
+                    <h2 class="fw-bold text-white mb-1">Send Payment</h2>
+                    <p class="text-light opacity-75 small mb-0">Manually add funds directly to any admin's wallet balance</p>
+                </div>
+                <div>
+                    <a href="/superadmin/payouts" class="btn btn-secondary rounded-pill px-4">
+                        <i class="fa-solid fa-arrow-left me-2"></i> Payout Requests
+                    </a>
+                </div>
+            </div>
+
+            <!-- Flash Messages -->
+            {% with messages = get_flashed_messages() %}
+                {% if messages %}
+                    {% for message in messages %}
+                        <div class="alert alert-info alert-dismissible fade show rounded-4 shadow-sm border-0 mb-4" role="alert">
+                            {{ message }}
+                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                        </div>
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
+
+            <div class="card bg-dark bg-opacity-50 border-0 rounded-4 shadow-sm border border-secondary border-opacity-25 p-4 p-md-5">
+                <form id="sendPaymentForm" action="/superadmin/send-payment" method="POST">
+                    
+                    <h5 class="fw-bold text-white mb-4 border-bottom border-secondary border-opacity-50 pb-3">Payment Details</h5>
+                    
+                    <!-- Select Admin -->
+                    <div class="mb-4">
+                        <label class="form-label text-light opacity-75 fw-semibold small text-uppercase" for="adminSelect">Select Admin User</label>
+                        <select class="form-select bg-black text-white border-secondary rounded-3" id="adminSelect" name="adminId" required>
+                            <option value="" disabled selected>-- Choose Admin --</option>
+                            {% for admin in admins %}
+                                <option value="{{ admin.id }}" data-email="{{ admin.email }}" data-balance="{{ admin.balance }}">
+                                    {{ admin.email }} (Current Balance: ${{ "%.2f"|format(admin.balance|default(0.0, true)) }})
+                                </option>
+                            {% endfor %}
+                        </select>
+                        <div class="form-text text-light opacity-50 small mt-2">Funds will be credited directly to the selected admin account.</div>
+                    </div>
+
+                    <!-- Payment Amount -->
+                    <div class="mb-4">
+                        <label class="form-label text-light opacity-75 fw-semibold small text-uppercase" for="paymentAmount">Payment Amount</label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-black border-secondary text-white opacity-75">$</span>
+                            <input type="number" step="0.01" min="0.01" class="form-control bg-black text-white border-secondary rounded-end-3" id="paymentAmount" name="amount" placeholder="0.00" required>
+                        </div>
+                        <div class="form-text text-light opacity-50 small mt-2">Enter the amount of funds you wish to pay / send to this user.</div>
+                    </div>
+
+                    <!-- Remarks/Notes -->
+                    <div class="mb-5">
+                        <label class="form-label text-light opacity-75 fw-semibold small text-uppercase" for="paymentRemarks">Remarks / Notes (Internal)</label>
+                        <textarea class="form-control bg-black text-white border-secondary rounded-3" id="paymentRemarks" name="remarks" rows="3" placeholder="e.g. Manual payment test adjustment"></textarea>
+                        <div class="form-text text-light opacity-50 small mt-2">Optional description or reason for this manual payment.</div>
+                    </div>
+
+                    <div class="d-grid mt-5">
+                        <button type="submit" class="btn btn-success btn-lg rounded-pill fw-bold py-3">
+                            <i class="fa-solid fa-paper-plane me-2"></i> Send Payment
+                        </button>
+                    </div>
+
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Double Confirmation Warning Screen via JS -->
+<script>
+document.getElementById('sendPaymentForm').addEventListener('submit', function(event) {
+    const adminSelect = document.getElementById('adminSelect');
+    const selectedOption = adminSelect.options[adminSelect.selectedIndex];
+    const email = selectedOption.getAttribute('data-email') || selectedOption.text;
+    const amount = document.getElementById('paymentAmount').value;
+
+    if (!amount || amount <= 0) {
+        return; // Let HTML5 validation handle this
+    }
+
+    // First Warning Confirmation
+    const confirm1 = confirm(`⚠️ [WARNING 1/2]\n\nAre you sure you want to send a payment of $${parseFloat(amount).toFixed(2)} to ${email}?`);
+    if (!confirm1) {
+        event.preventDefault();
+        return;
+    }
+
+    // Second Warning Confirmation
+    const confirm2 = confirm(`🚨 [WARNING 2/2]\n\nDOUBLE-CHECK ACTION:\nThis will immediately increment ${email}'s wallet balance and total earnings by $${parseFloat(amount).toFixed(2)}.\n\nThis transaction cannot be undone automatically. Do you want to proceed?`);
+    if (!confirm2) {
+        event.preventDefault();
+        return;
+    }
+});
+</script>
+{% endblock %}

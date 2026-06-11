@@ -737,6 +737,52 @@ def superadmin_notifications():
         
     return render_template("superadmin/notifications.html", notifications=notifications_data)
 
+@app.route('/superadmin/send-payment', methods=['GET', 'POST'])
+def superadmin_send_payment():
+    if 'superadmin_token' not in session:
+        return redirect('/superadmin/login')
+        
+    headers = {"Authorization": f"Bearer {session['superadmin_token']}"}
+    
+    if request.method == 'POST':
+        admin_id = request.form.get('adminId')
+        amount = request.form.get('amount')
+        remarks = request.form.get('remarks', '')
+        
+        if not admin_id or not amount:
+            flash("Admin ID and amount are required.")
+            return redirect('/superadmin/send-payment')
+            
+        try:
+            payload = {
+                "amount": float(amount),
+                "remarks": remarks
+            }
+            res = requests.post(f"{API_BASE_URL}/api/superadmin/admins/{admin_id}/pay", headers=headers, json=payload)
+            if res.status_code == 200:
+                flash(f"Successfully sent ${amount} payment to admin.")
+            else:
+                try:
+                    flash(res.json().get("error", "Failed to send payment."))
+                except:
+                    flash("Failed to send payment.")
+        except ValueError:
+            flash("Invalid amount format.")
+        except Exception as e:
+            flash("Server connection failed.")
+        return redirect('/superadmin/send-payment')
+        
+    # GET request
+    admins_data = []
+    try:
+        res = requests.get(f"{API_BASE_URL}/api/superadmin/admins", headers=headers)
+        if res.status_code == 200:
+            admins_data = res.json()
+    except Exception as e:
+        flash("Could not fetch admins list.")
+        
+    return render_template("superadmin/send_payment.html", admins=admins_data)
+
 def update_env_variable(key, value):
     env_path = '.env'
     if not os.path.exists(env_path):
