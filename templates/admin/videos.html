@@ -140,21 +140,21 @@
             data-downloads="${video.bookmarks || 0}"
             data-id="${video.id}">
 
-            <div class="custom-nav-container p-2 video-row"
+            <div class="custom-nav-container p-2 video-row position-relative"
                 style="border-radius:14px; cursor:pointer;"
                 onclick="loadVideo('${video.id}')">
 
                 <div class="row align-items-center gx-3 gy-2">
 
                     <!-- Thumbnail -->
-                    <div class="col-md-3">
+                    <div class="col-md-3 col-12">
                         <img src="${video.thumbnailUrl || 'https://placehold.co/500x300/041408/1f9c40?text=Diskly'}"
                              class="w-100 rounded-3"
                              style="height:95px; object-fit:cover;">
                     </div>
 
                     <!-- Info -->
-                    <div class="col-md-7">
+                    <div class="col-md-9 col-12 pe-5">
 
                         <h6 class="fw-bold mb-1">${video.title}</h6>
 
@@ -186,45 +186,47 @@
 
                     </div>
 
-                    <!-- 3-Dot Dropdown -->
-                    <div class="col-md-2 text-md-end" onclick="event.stopPropagation();">
-                        <div class="dropdown">
-                            <button class="btn btn-outline-light btn-sm rounded-circle" type="button" data-bs-toggle="dropdown" aria-expanded="false" style="width: 32px; height: 32px; padding: 0;">
-                                <i class="fa-solid fa-ellipsis-vertical"></i>
-                            </button>
-                            <ul class="dropdown-menu dropdown-menu-end dropdown-menu-dark">
-                                <li>
-                                    <button class="dropdown-item" onclick="loadVideo('${video.id}')">
-                                        <i class="fa-solid fa-play me-2 text-success"></i>Open Preview
-                                    </button>
-                                </li>
-                                <li>
-                                    <button class="dropdown-item" onclick="window.open('${video.streamUrl}', '_blank')">
-                                        <i class="fa-solid fa-up-right-from-square me-2 text-info"></i>Open File
-                                    </button>
-                                </li>
-                                <li>
-                                    <button class="dropdown-item" onclick="copyDiskly('${video.downloadKey}', this.closest('.video-item').querySelector('.badge'))">
-                                        <i class="fa-solid fa-copy me-2 text-primary"></i>Copy Link
-                                    </button>
-                                </li>
-                                <li>
-                                    <button class="dropdown-item" data-bs-toggle="modal" data-bs-target="#editModal" onclick="populateEditModal('${video.id}')">
-                                        <i class="fa-solid fa-pen me-2 text-warning"></i>Edit
-                                    </button>
-                                </li>
-                                <li><hr class="dropdown-divider"></li>
-                                <li>
-                                    <button class="dropdown-item text-danger" onclick="deleteVideo('${video.id}')">
-                                        <i class="fa-solid fa-trash me-2"></i>Delete
-                                    </button>
-                                </li>
-                            </ul>
-                        </div>
-                    </div>
-
                 </div>
+
+                <!-- 3-Dot Dropdown -->
+                <div class="position-absolute" style="top: 10px; right: 10px; z-index: 1050;" onclick="event.stopPropagation();">
+                    <div class="dropdown">
+                        <button class="btn btn-outline-light btn-sm rounded-circle" type="button" data-bs-toggle="dropdown" aria-expanded="false" style="width: 32px; height: 32px; padding: 0; background: rgba(0,0,0,0.5); border-color: rgba(255,255,255,0.25);">
+                            <i class="fa-solid fa-ellipsis-vertical"></i>
+                        </button>
+                        <ul class="dropdown-menu dropdown-menu-end dropdown-menu-dark shadow-lg" style="z-index: 99999 !important;">
+                            <li>
+                                <button class="dropdown-item" onclick="loadVideo('${video.id}')">
+                                    <i class="fa-solid fa-play me-2 text-success"></i>Open Preview
+                                </button>
+                            </li>
+                            <li>
+                                <button class="dropdown-item" onclick="window.open('${video.streamUrl}', '_blank')">
+                                    <i class="fa-solid fa-up-right-from-square me-2 text-info"></i>Open File
+                                </button>
+                            </li>
+                            <li>
+                                <button class="dropdown-item" onclick="copyDiskly('${video.downloadKey}', this.closest('.video-item').querySelector('.badge'))">
+                                    <i class="fa-solid fa-copy me-2 text-primary"></i>Copy Link
+                                </button>
+                            </li>
+                            <li>
+                                <button class="dropdown-item" data-bs-toggle="modal" data-bs-target="#editModal" onclick="populateEditModal('${video.id}')">
+                                    <i class="fa-solid fa-pen me-2 text-warning"></i>Edit
+                                </button>
+                            </li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li>
+                                <button class="dropdown-item text-danger" onclick="deleteVideo('${video.id}')">
+                                    <i class="fa-solid fa-trash me-2"></i>Delete
+                                </button>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+
             </div>
+
 
         </div>
         `;

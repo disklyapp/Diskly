@@ -71,7 +71,16 @@
                                 {% endif %}
                             </td>
                             <td class="py-3 px-4 text-end">
-                                <button class="btn btn-sm btn-outline-success px-3 rounded-pill" onclick="openPayoutModal({{ payout | tojson | safe }})">Process</button>
+                                <button class="btn btn-sm btn-outline-success px-3 rounded-pill process-btn" 
+                                        data-id="{{ payout.id }}"
+                                        data-email="{{ payout.admin.email if payout.admin else '' }}"
+                                        data-admin-id="{{ payout.adminId }}"
+                                        data-amount="{{ payout.amount }}"
+                                        data-method="{{ payout.paymentMethod }}"
+                                        data-details="{{ payout.paymentDetails }}"
+                                        data-status="{{ payout.status }}"
+                                        data-txid="{{ payout.transactionId or '' }}"
+                                        data-remarks="{{ payout.remarks or '' }}">Process</button>
                             </td>
                         </tr>
                         {% endfor %}
@@ -113,9 +122,11 @@
                 <label class="form-label">Status</label>
                 <select id="payoutStatusSelect" class="form-select bg-secondary text-white border-0">
                     <option value="PENDING">Pending</option>
+                    <option value="IN_REVIEW">In Review</option>
                     <option value="APPROVED">Approved</option>
                     <option value="COMPLETED">Paid (Completed)</option>
-                    <option value="REJECTED">Cancel Payment (Rejected & Refunded)</option>
+                    <option value="CANCELLED">Cancelled & Returned (Refunded)</option>
+                    <option value="ANOMALY_DETECTED">Anomaly Detected & Forfeited (No Refund)</option>
                 </select>
             </div>
             <div class="mb-3">
@@ -135,6 +146,25 @@
 
 <script>
     let payoutModalInstance = null;
+
+    document.addEventListener('DOMContentLoaded', () => {
+        document.querySelectorAll('.process-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                const payout = {
+                    id: this.getAttribute('data-id'),
+                    admin: { email: this.getAttribute('data-email') },
+                    adminId: this.getAttribute('data-admin-id'),
+                    amount: this.getAttribute('data-amount'),
+                    paymentMethod: this.getAttribute('data-method'),
+                    paymentDetails: this.getAttribute('data-details'),
+                    status: this.getAttribute('data-status'),
+                    transactionId: this.getAttribute('data-txid'),
+                    remarks: this.getAttribute('data-remarks')
+                };
+                openPayoutModal(payout);
+            });
+        });
+    });
 
     function openPayoutModal(payout) {
         document.getElementById("payoutIdInput").value = payout.id;
