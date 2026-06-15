@@ -14,6 +14,16 @@
     .video-row {
         cursor: pointer;
     }
+
+    .video-item {
+        position: relative;
+        z-index: 1;
+        transition: z-index 0.1s ease;
+    }
+
+    .video-item:focus-within {
+        z-index: 1060 !important;
+    }
 </style>
 
 
@@ -363,6 +373,21 @@
             }, 2000);
         }
     }
+
+    // Handle active dropdown z-index stacking dynamically
+    document.addEventListener('show.bs.dropdown', function (event) {
+        const item = event.target.closest('.video-item');
+        if (item) {
+            item.style.zIndex = '1060';
+        }
+    });
+
+    document.addEventListener('hide.bs.dropdown', function (event) {
+        const item = event.target.closest('.video-item');
+        if (item) {
+            item.style.zIndex = '1';
+        }
+    });
 
     renderVideos(videos);
 </script>
