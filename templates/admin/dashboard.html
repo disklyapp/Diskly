@@ -108,10 +108,43 @@
                 </div>
                 <div class="bg-black bg-opacity-50 p-3 rounded-3 border border-secondary border-opacity-25 text-center">
                     <span class="text-white opacity-50 small d-block mb-1">Your Telegram Upload ID</span>
-                    <strong class="text-highlight fs-5 font-monospace">{{ data.get('telegramUploadId', 'N/A') }}</strong>
+                    <strong id="telegramUploadIdText" class="text-highlight fs-5 font-monospace d-block mb-2">{{ data.get('telegramUploadId', 'N/A') }}</strong>
+                    <button class="btn btn-sm btn-outline-light rounded-pill px-3 py-1 mt-1 d-inline-flex align-items-center gap-1" onclick="copyTelegramId()">
+                        <i class="fa-solid fa-copy"></i> <span id="copyBtnText">Copy ID</span>
+                    </button>
                 </div>
             </div>
         </div>
     </div>
 </div>
+
+<script>
+function copyTelegramId() {
+    const idText = document.getElementById('telegramUploadIdText').innerText.trim();
+    if (idText && idText !== 'N/A') {
+        navigator.clipboard.writeText(idText).then(() => {
+            const btnText = document.getElementById('copyBtnText');
+            btnText.innerText = 'Copied!';
+            setTimeout(() => {
+                btnText.innerText = 'Copy ID';
+            }, 2000);
+        }).catch(err => {
+            console.error('Failed to copy text: ', err);
+            // Fallback for older browsers or non-secure contexts
+            const el = document.createElement('textarea');
+            el.value = idText;
+            document.body.appendChild(el);
+            el.select();
+            document.execCommand('copy');
+            document.body.removeChild(el);
+            const btnText = document.getElementById('copyBtnText');
+            btnText.innerText = 'Copied!';
+            setTimeout(() => {
+                btnText.innerText = 'Copy ID';
+            }, 2000);
+        });
+    }
+}
+</script>
 {% endblock %}
+
