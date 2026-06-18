@@ -527,6 +527,19 @@ def superadmin_admins():
         flash("Server connection failed.")
     return render_template("superadmin/admins.html", admins=admins_data)
 
+@app.route('/superadmin/admins/<int:admin_id>', methods=['GET'])
+def superadmin_get_admin(admin_id):
+    if 'superadmin_token' not in session:
+        return Response(json.dumps({"error": "Unauthorized"}), status=401, mimetype='application/json')
+    
+    api_url = f"{API_BASE_URL}/api/superadmin/admins/{admin_id}"
+    headers = {"Authorization": f"Bearer {session['superadmin_token']}"}
+    try:
+        response = requests.get(api_url, headers=headers)
+        return Response(response.text, status=response.status_code, mimetype='application/json')
+    except Exception as e:
+        return Response(json.dumps({"error": "Server connection failed"}), status=500, mimetype='application/json')
+
 @app.route('/superadmin/admins/limits', methods=['PUT'])
 def superadmin_admins_limits():
     if 'superadmin_token' not in session:

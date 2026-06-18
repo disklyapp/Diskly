@@ -20,11 +20,10 @@
             <label class="form-label text-light opacity-75 small fw-semibold text-uppercase">Payment Status</label>
             <select id="statusFilter" class="form-select bg-secondary text-white border-secondary">
                 <option value="ALL">All Statuses</option>
-                <option value="PENDING">Pending</option>
-                <option value="APPROVED">Approved</option>
                 <option value="IN_REVIEW">In Review</option>
-                <option value="COMPLETED">Paid (Completed)</option>
-                <option value="CANCELLED">Cancelled / Rejected</option>
+                <option value="COMPLETED">Paid</option>
+                <option value="CANCELLED">Cancel and Returned</option>
+                <option value="ANOMALY_DETECTED">Anomaly Detected & Forfeited</option>
             </select>
         </div>
         <div class="col-md-3">
@@ -70,7 +69,9 @@
                         <tr class="payout-row" data-id="{{ payout.id }}">
                             <td class="py-3 px-4 text-white">#{{ payout.id }}</td>
                             <td class="py-3 px-4">
-                                <div class="fw-bold text-white">{{ payout.admin.email }}</div>
+                                <a href="javascript:void(0)" onclick="viewAdminProfile({{ payout.adminId }})" class="fw-bold text-info text-decoration-none hover-underline" style="font-weight: 700;">
+                                    {{ payout.admin.email if payout.admin else 'View Profile' }}
+                                </a>
                                 <div class="small text-light opacity-50">Admin ID: {{ payout.adminId }}</div>
                             </td>
                             <td class="py-3 px-4">
@@ -88,14 +89,16 @@
                                 <div class="text-white fw-bold fs-5">${{ payout.amount }}</div>
                             </td>
                             <td class="py-3 px-4 text-center">
-                                {% if payout.status == 'PENDING' %}
-                                    <span class="badge bg-warning bg-opacity-25 text-warning border border-warning border-opacity-25 rounded-pill px-3 py-2">Pending</span>
+                                {% if payout.status == 'IN_REVIEW' or payout.status == 'PENDING' %}
+                                    <span class="badge bg-warning bg-opacity-25 text-warning border border-warning border-opacity-25 rounded-pill px-3 py-2">In Review</span>
                                 {% elif payout.status == 'COMPLETED' %}
                                     <span class="badge bg-success bg-opacity-25 text-success border border-success border-opacity-25 rounded-pill px-3 py-2">Paid</span>
-                                {% elif payout.status == 'APPROVED' or payout.status == 'ACCEPTED' %}
-                                    <span class="badge bg-primary bg-opacity-25 text-primary border border-primary border-opacity-25 rounded-pill px-3 py-2">Approved</span>
+                                {% elif payout.status == 'CANCELLED' or payout.status == 'REJECTED' %}
+                                    <span class="badge bg-danger bg-opacity-25 text-danger border border-danger border-opacity-25 rounded-pill px-3 py-2">Cancel & Returned</span>
+                                {% elif payout.status == 'ANOMALY_DETECTED' %}
+                                    <span class="badge bg-danger bg-opacity-25 text-danger border border-danger border-opacity-25 rounded-pill px-3 py-2" style="background: rgba(255, 50, 50, 0.1) !important; color: #ff5252 !important; border-color: rgba(255, 50, 50, 0.25) !important;">Anomaly & Forfeited</span>
                                 {% else %}
-                                    <span class="badge bg-danger bg-opacity-25 text-danger border border-danger border-opacity-25 rounded-pill px-3 py-2">Cancelled</span>
+                                    <span class="badge bg-secondary bg-opacity-25 text-secondary border border-secondary border-opacity-25 rounded-pill px-3 py-2">{{ payout.status }}</span>
                                 {% endif %}
                             </td>
                             <td class="py-3 px-4 text-end">
@@ -149,12 +152,10 @@
             <div class="mb-3">
                 <label class="form-label">Status</label>
                 <select id="payoutStatusSelect" class="form-select bg-secondary text-white border-0">
-                    <option value="PENDING">Pending</option>
                     <option value="IN_REVIEW">In Review</option>
-                    <option value="APPROVED">Approved</option>
-                    <option value="COMPLETED">Paid (Completed)</option>
-                    <option value="CANCELLED">Cancelled & Returned (Refunded)</option>
-                    <option value="ANOMALY_DETECTED">Anomaly Detected & Forfeited (No Refund)</option>
+                    <option value="COMPLETED">Paid</option>
+                    <option value="CANCELLED">Cancel and Returned</option>
+                    <option value="ANOMALY_DETECTED">Anomaly Detected & Forfeited</option>
                 </select>
             </div>
             <div class="mb-3">
@@ -341,5 +342,161 @@
             alert("Error connecting to server.");
         }
     });
+
+    // View Admin Details Modal Functionality
+    let viewAdminModalInstance = null;
+
+    async function viewAdminProfile(adminId) {
+        const container = document.getElementById('adminDetailBody');
+        container.innerHTML = `
+            <div class="text-center py-4">
+                <div class="spinner-border text-info" role="status">
+                    <span class="visually-hidden">Loading...</span>
+                </div>
+                <p class="text-muted mt-2 small">Fetching admin details...</p>
+            </div>
+        `;
+
+        viewAdminModalInstance = new bootstrap.Modal(document.getElementById('viewAdminModal'));
+        viewAdminModalInstance.show();
+
+        try {
+            const res = await fetch(`/superadmin/admins/${adminId}`);
+            if (!res.ok) throw new Error("Could not load details");
+            const data = await res.json();
+            
+            // Format total storage
+            let storageFormatted = "0 Bytes";
+            if (data.totalStorage >= 1073741824) {
+                storageFormatted = (data.totalStorage / 1073741824).toFixed(2) + " GB";
+            } else if (data.totalStorage >= 1048576) {
+                storageFormatted = (data.totalStorage / 1048576).toFixed(2) + " MB";
+            } else if (data.totalStorage >= 1024) {
+                storageFormatted = (data.totalStorage / 1024).toFixed(2) + " KB";
+            } else if (data.totalStorage > 0) {
+                storageFormatted = data.totalStorage + " Bytes";
+            }
+
+            const profilePic = data.profilePic || 'https://placehold.co/150x150/142027/1BEBB9?text=Admin';
+            
+            container.innerHTML = `
+                <div class="row g-4">
+                    <div class="col-md-4 text-center border-end border-secondary border-opacity-50">
+                        <img src="${profilePic}" class="rounded-circle img-thumbnail bg-secondary p-1 mb-3" style="width: 120px; height: 120px; object-fit: cover;">
+                        <h5 class="fw-bold mb-1">${data.name || 'No Name Set'}</h5>
+                        <p class="text-light opacity-50 small mb-2">ID: #${data.id}</p>
+                        <span class="badge ${data.isActive ? 'bg-success' : 'bg-danger'} bg-opacity-25 ${data.isActive ? 'text-success' : 'text-danger'} border ${data.isActive ? 'border-success' : 'border-danger'} border-opacity-25 rounded-pill px-3 py-1.5">
+                            ${data.isActive ? 'Active' : 'Disabled'}
+                        </span>
+                        <div class="mt-4 p-2 bg-black bg-opacity-25 rounded-3 text-start small">
+                            <div class="text-white-50">Telegram Upload ID:</div>
+                            <code class="text-info">${data.telegramUploadId || 'Not Linked'}</code>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-8">
+                        <h6 class="fw-bold text-warning border-bottom border-secondary border-opacity-25 pb-2 mb-3">
+                            <i class="fa-solid fa-circle-info me-2"></i>Account Summary
+                        </h6>
+                        <div class="row g-3 mb-4">
+                            <div class="col-6">
+                                <div class="text-white-50 small">Email Address</div>
+                                <div class="fw-semibold text-white">${data.email}</div>
+                            </div>
+                            <div class="col-6">
+                                <div class="text-white-50 small">Joined Date</div>
+                                <div class="fw-semibold text-white">${data.createdAt.slice(0,10)}</div>
+                            </div>
+                            <div class="col-6">
+                                <div class="text-white-50 small">Wallet Balance</div>
+                                <div class="fw-semibold text-success fs-5">$${data.balance.toFixed(2)}</div>
+                            </div>
+                            <div class="col-6">
+                                <div class="text-white-50 small">Total Earnings</div>
+                                <div class="fw-semibold text-warning fs-5">$${data.totalEarnings.toFixed(2)}</div>
+                            </div>
+                            <div class="col-6">
+                                <div class="text-white-50 small">Total Videos</div>
+                                <div class="fw-semibold text-white">${data.totalVideos}</div>
+                            </div>
+                            <div class="col-6">
+                                <div class="text-white-50 small">Storage Consumed</div>
+                                <div class="fw-semibold text-white">${storageFormatted}</div>
+                            </div>
+                        </div>
+
+                        <h6 class="fw-bold text-warning border-bottom border-secondary border-opacity-25 pb-2 mb-3">
+                            <i class="fa-solid fa-sliders me-2"></i>Limits Configuration
+                        </h6>
+                        <div class="row g-3 mb-4 small">
+                            <div class="col-4">
+                                <div class="text-white-50">Daily Uploads</div>
+                                <span class="badge bg-secondary mt-1">${data.dailyUploadLimit !== null ? data.dailyUploadLimit : 'Unlimited'}</span>
+                            </div>
+                            <div class="col-4">
+                                <div class="text-white-50">Monthly Uploads</div>
+                                <span class="badge bg-secondary mt-1">${data.monthlyUploadLimit !== null ? data.monthlyUploadLimit : 'Unlimited'}</span>
+                            </div>
+                            <div class="col-4">
+                                <div class="text-white-50">Payout Threshold</div>
+                                <span class="badge bg-primary mt-1">${data.minimumPayoutThreshold !== null ? '$' + data.minimumPayoutThreshold : 'Unlimited'}</span>
+                            </div>
+                            <div class="col-6">
+                                <div class="text-white-50">Website Max Upload Size</div>
+                                <span class="badge bg-info text-dark mt-1">${data.maxUploadSizeWebsite !== null ? data.maxUploadSizeWebsite + ' MB' : 'Unlimited'}</span>
+                            </div>
+                            <div class="col-6">
+                                <div class="text-white-50">Telegram Max Upload Size</div>
+                                <span class="badge bg-info text-dark mt-1">${data.maxUploadSizeTelegram !== null ? data.maxUploadSizeTelegram + ' MB' : 'Unlimited'}</span>
+                            </div>
+                        </div>
+
+                        <h6 class="fw-bold text-warning border-bottom border-secondary border-opacity-25 pb-2 mb-3">
+                            <i class="fa-solid fa-building-columns me-2"></i>Payment details
+                        </h6>
+                        <div class="row g-3 small">
+                            <div class="col-6">
+                                <div class="text-white-50">Bank Name</div>
+                                <div class="fw-semibold text-white">${data.bankName || 'N/A'}</div>
+                            </div>
+                            <div class="col-6">
+                                <div class="text-white-50">IFSC Code</div>
+                                <div class="fw-semibold text-white">${data.ifscCode || 'N/A'}</div>
+                            </div>
+                            <div class="col-6">
+                                <div class="text-white-50">Account Number</div>
+                                <div class="fw-semibold text-white">${data.accountNumber || 'N/A'}</div>
+                            </div>
+                            <div class="col-6">
+                                <div class="text-white-50">UPI ID</div>
+                                <div class="fw-semibold text-white">${data.upiId || 'N/A'}</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        } catch (e) {
+            container.innerHTML = `
+                <div class="alert alert-danger mb-0">
+                    <i class="fa-solid fa-triangle-exclamation me-2"></i>Failed to fetch admin details. Please try again.
+                </div>
+            `;
+        }
+    }
 </script>
+
+<!-- View Admin Modal -->
+<div class="modal fade" id="viewAdminModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content bg-dark text-white border-secondary" style="border-radius: 18px; overflow: hidden; box-shadow: 0 10px 40px rgba(0,0,0,0.5);">
+      <div class="modal-header border-secondary p-4 bg-secondary bg-opacity-25">
+        <h5 class="modal-title fw-bold"><i class="fa-solid fa-user-shield text-warning me-2"></i>Admin Account Profile</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body p-4" id="adminDetailBody">
+        <!-- Dynamically populated via JS -->
+      </div>
+    </div>
+  </div>
+</div>
 {% endblock %}
