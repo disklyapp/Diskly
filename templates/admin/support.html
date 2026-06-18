@@ -1,63 +1,222 @@
 {% extends 'admin/base.html' %}
 
 {% block content %}
+<style>
+    .support-card {
+        background: rgba(20, 32, 39, 0.6);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        backdrop-filter: blur(12px);
+        border-radius: 20px;
+        transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+    }
+    
+    .support-card:hover {
+        transform: translateY(-8px);
+        border-color: var(--primary-color, #1bebb9);
+        box-shadow: 0 12px 30px rgba(27, 235, 185, 0.15);
+        background: rgba(20, 32, 39, 0.85);
+    }
+
+    .support-btn {
+        word-break: break-all;
+        white-space: normal;
+        display: inline-block;
+        max-width: 100%;
+        font-size: 0.85rem;
+        padding: 10px 16px;
+    }
+
+    .faq-accordion .accordion-item {
+        background: rgba(20, 32, 39, 0.4);
+        border: 1px solid rgba(255, 255, 255, 0.05);
+        border-radius: 12px;
+        margin-bottom: 12px;
+        overflow: hidden;
+    }
+
+    .faq-accordion .accordion-button {
+        background: transparent;
+        color: #fff;
+        font-weight: 600;
+        box-shadow: none;
+        padding: 18px 24px;
+        border: none;
+    }
+
+    .faq-accordion .accordion-button:not(.collapsed) {
+        color: var(--primary-color, #1bebb9);
+        background: rgba(27, 235, 185, 0.05);
+    }
+
+    .faq-accordion .accordion-button::after {
+        filter: invert(1);
+    }
+
+    .faq-accordion .accordion-body {
+        background: rgba(13, 22, 27, 0.5);
+        color: rgba(255, 255, 255, 0.75);
+        line-height: 1.6;
+        padding: 20px 24px;
+    }
+
+    .support-icon-circle {
+        width: 65px;
+        height: 65px;
+        border-radius: 50%;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        background: rgba(255,255,255,0.03);
+        border: 1px solid rgba(255,255,255,0.05);
+        margin-bottom: 20px;
+        transition: all 0.3s ease;
+    }
+
+    .support-card:hover .support-icon-circle {
+        background: rgba(27, 235, 185, 0.1);
+        border-color: rgba(27, 235, 185, 0.3);
+        transform: scale(1.1);
+    }
+</style>
+
 <section class="py-4">
     <div class="container-fluid">
         <div class="row justify-content-center">
-            <div class="col-lg-8">
-                <div class="card border-0 shadow-sm rounded-4 p-4 p-md-5 bg-dark text-white border border-secondary border-opacity-25">
+            <div class="col-xl-9 col-lg-11">
+                
+                <!-- Main Card Wrapper -->
+                <div class="card border-0 bg-transparent text-white">
                     
+                    <!-- Header -->
                     <div class="text-center mb-5">
-                        <i class="fa-solid fa-headset text-primary-green" style="font-size: 70px;"></i>
-                        <h2 class="fw-bold mt-3 mb-2">Help & Support</h2>
-                        <p class="text-light opacity-75">
-                            Get in touch with the Diskly team. We are here to help you.
+                        <div class="d-inline-flex align-items-center justify-content-center p-3 bg-secondary bg-opacity-25 rounded-circle mb-3 border border-secondary border-opacity-25" style="width: 100px; height: 100px;">
+                            <i class="fa-solid fa-headset text-success" style="font-size: 45px;"></i>
+                        </div>
+                        <h2 class="fw-bold mt-2 mb-2">Help & Support Center</h2>
+                        <p class="text-white-50 max-w-600 mx-auto" style="font-size: 1.05rem;">
+                            Need help with payments, video conversions, or api integration? Get in touch with our team.
                         </p>
                     </div>
 
-                    <div class="row g-4 justify-content-center mt-2">
+                    <!-- Contact channels -->
+                    <div class="row g-4 justify-content-center">
+                        
                         <!-- Email Card -->
-                        <div class="col-md-4">
-                            <div class="bg-secondary bg-opacity-25 rounded-4 p-4 text-center border border-secondary border-opacity-25 h-100 transition-all hover-translate-y">
-                                <i class="fa-solid fa-envelope text-primary-green fs-2 mb-3"></i>
-                                <h5 class="fw-bold text-white mb-2">Email Support</h5>
-                                <p class="text-light opacity-50 small mb-3">Response within 24 hours</p>
-                                <a href="mailto:disklyteam@gmail.com" class="btn btn-sm btn-primary-green px-3 rounded-pill fw-bold text-decoration-none">
-                                    disklyteam@gmail.com
-                                </a>
+                        <div class="col-md-4 col-sm-12">
+                            <div class="support-card p-4 text-center h-100 d-flex flex-column justify-content-between">
+                                <div>
+                                    <div class="support-icon-circle">
+                                        <i class="fa-solid fa-envelope text-success fs-3"></i>
+                                    </div>
+                                    <h5 class="fw-bold text-white mb-2">Email Support</h5>
+                                    <p class="text-white-50 small mb-4">Best for general billing, legal matters, and advertising queries.</p>
+                                </div>
+                                <div>
+                                    <a href="mailto:disklyteam@gmail.com" class="btn btn-primary-green rounded-pill fw-bold support-btn w-100">
+                                        disklyteam@gmail.com
+                                    </a>
+                                </div>
                             </div>
                         </div>
 
                         <!-- Telegram Support -->
-                        <div class="col-md-4">
-                            <div class="bg-secondary bg-opacity-25 rounded-4 p-4 text-center border border-secondary border-opacity-25 h-100 transition-all hover-translate-y">
-                                <i class="fa-brands fa-telegram text-primary fs-2 mb-3"></i>
-                                <h5 class="fw-bold text-white mb-2">Telegram Support</h5>
-                                <p class="text-light opacity-50 small mb-3">Direct chat with support team</p>
-                                <a href="https://t.me/DisklySupport" target="_blank" class="btn btn-sm btn-primary-green px-3 rounded-pill fw-bold text-decoration-none">
-                                    @DisklySupport
-                                </a>
+                        <div class="col-md-4 col-sm-12">
+                            <div class="support-card p-4 text-center h-100 d-flex flex-column justify-content-between">
+                                <div>
+                                    <div class="support-icon-circle">
+                                        <i class="fa-brands fa-telegram text-info fs-3"></i>
+                                    </div>
+                                    <h5 class="fw-bold text-white mb-2">Telegram Help</h5>
+                                    <p class="text-white-50 small mb-4">Best for rapid response regarding account verification or limits issues.</p>
+                                </div>
+                                <div>
+                                    <a href="https://t.me/DisklySupport" target="_blank" class="btn btn-info text-dark rounded-pill fw-bold support-btn w-100">
+                                        @DisklySupport
+                                    </a>
+                                </div>
                             </div>
                         </div>
 
                         <!-- Telegram Channel -->
-                        <div class="col-md-4">
-                            <div class="bg-secondary bg-opacity-25 rounded-4 p-4 text-center border border-secondary border-opacity-25 h-100 transition-all hover-translate-y">
-                                <i class="fa-solid fa-bullhorn text-warning fs-2 mb-3"></i>
-                                <h5 class="fw-bold text-white mb-2">Official Channel</h5>
-                                <p class="text-light opacity-50 small mb-3">Latest news and announcements</p>
-                                <a href="https://t.me/DisklyOfficial" target="_blank" class="btn btn-sm btn-warning px-3 rounded-pill fw-bold text-decoration-none">
-                                    @DisklyOfficial
-                                </a>
+                        <div class="col-md-4 col-sm-12">
+                            <div class="support-card p-4 text-center h-100 d-flex flex-column justify-content-between">
+                                <div>
+                                    <div class="support-icon-circle">
+                                        <i class="fa-solid fa-bullhorn text-warning fs-3"></i>
+                                    </div>
+                                    <h5 class="fw-bold text-white mb-2">Official Channel</h5>
+                                    <p class="text-white-50 small mb-4">Stay updated with feature releases, announcements, and payouts status.</p>
+                                </div>
+                                <div>
+                                    <a href="https://t.me/DisklyOfficial" target="_blank" class="btn btn-warning text-dark rounded-pill fw-bold support-btn w-100">
+                                        @DisklyOfficial
+                                    </a>
+                                </div>
                             </div>
+                        </div>
+
+                    </div>
+
+                    <!-- Meta Advice -->
+                    <div class="alert bg-secondary bg-opacity-25 mt-5 mb-5 text-center rounded-4 border border-secondary border-opacity-25 p-3" style="color: rgba(255,255,255,0.75);">
+                        <i class="fa-solid fa-lightbulb text-warning me-2"></i>
+                        For faster resolution, please always mention your registered <b>Admin Email</b> when contacting our support team.
+                    </div>
+
+                    <!-- FAQs Section -->
+                    <div class="mt-4">
+                        <h4 class="fw-bold mb-4 text-center"><i class="fa-solid fa-circle-question text-success me-2"></i>Frequently Asked Questions</h4>
+                        
+                        <div class="accordion faq-accordion" id="faqAccordion">
+                            
+                            <!-- FAQ 1 -->
+                            <div class="accordion-item">
+                                <h2 class="accordion-header">
+                                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faq1">
+                                        How long do payout withdrawals take to process?
+                                    </button>
+                                </h2>
+                                <div id="faq1" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
+                                    <div class="accordion-body">
+                                        Payouts are reviewed and processed by our Superadmin team. Generally, approved payouts are processed and dispatched within 24 to 48 hours of requesting. You can track status directly on your Billing page.
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- FAQ 2 -->
+                            <div class="accordion-item">
+                                <h2 class="accordion-header">
+                                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faq2">
+                                        How does the chunked video upload work?
+                                    </button>
+                                </h2>
+                                <div id="faq2" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
+                                    <div class="accordion-body">
+                                        Our new upload system automatically splits files into small 5MB chunks. These chunks are sent iteratively to the backend and merged once completed. This prevents issues like timeouts, proxy size restrictions, or network failures, allowing you to upload files up to several gigabytes with ease.
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- FAQ 3 -->
+                            <div class="accordion-item">
+                                <h2 class="accordion-header">
+                                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faq3">
+                                        What should I do if a Terabox clone fails?
+                                    </button>
+                                </h2>
+                                <div id="faq3" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
+                                    <div class="accordion-body">
+                                        If a Terabox link doesn't process or get added to the background queue, verify that the link is public and still accessible. If it is and still fails, the Terabox scraper API may be temporarily rate-limited. Please retry after a few minutes or contact support.
+                                    </div>
+                                </div>
+                            </div>
+
                         </div>
                     </div>
 
-                    <div class="alert alert-light mt-5 mb-0 small text-center rounded-4 border border-secondary border-opacity-25">
-                        For faster resolution, please include your <b>Admin Email</b> or <b>Share ID</b> when contacting support.
-                    </div>
-
                 </div>
+                
             </div>
         </div>
     </div>
