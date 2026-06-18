@@ -1,0 +1,65 @@
+{% extends 'admin/base.html' %}
+
+{% block content %}
+<section class="py-4">
+    <div class="container-fluid">
+        <div class="row justify-content-center">
+            <div class="col-lg-8">
+                <div class="card border-0 shadow-sm rounded-4 p-4 p-md-5 bg-dark text-white border border-secondary border-opacity-25">
+                    
+                    <div class="text-center mb-5">
+                        <i class="fa-solid fa-headset text-primary-green" style="font-size: 70px;"></i>
+                        <h2 class="fw-bold mt-3 mb-2">Help & Support</h2>
+                        <p class="text-light opacity-75">
+                            Get in touch with the Diskly team. We are here to help you.
+                        </p>
+                    </div>
+
+                    <div class="row g-4 justify-content-center mt-2">
+                        <!-- Email Card -->
+                        <div class="col-md-4">
+                            <div class="bg-secondary bg-opacity-25 rounded-4 p-4 text-center border border-secondary border-opacity-25 h-100 transition-all hover-translate-y">
+                                <i class="fa-solid fa-envelope text-primary-green fs-2 mb-3"></i>
+                                <h5 class="fw-bold text-white mb-2">Email Support</h5>
+                                <p class="text-light opacity-50 small mb-3">Response within 24 hours</p>
+                                <a href="mailto:disklyteam@gmail.com" class="btn btn-sm btn-primary-green px-3 rounded-pill fw-bold text-decoration-none">
+                                    disklyteam@gmail.com
+                                </a>
+                            </div>
+                        </div>
+
+                        <!-- Telegram Support -->
+                        <div class="col-md-4">
+                            <div class="bg-secondary bg-opacity-25 rounded-4 p-4 text-center border border-secondary border-opacity-25 h-100 transition-all hover-translate-y">
+                                <i class="fa-brands fa-telegram text-primary fs-2 mb-3"></i>
+                                <h5 class="fw-bold text-white mb-2">Telegram Support</h5>
+                                <p class="text-light opacity-50 small mb-3">Direct chat with support team</p>
+                                <a href="https://t.me/DisklySupport" target="_blank" class="btn btn-sm btn-primary-green px-3 rounded-pill fw-bold text-decoration-none">
+                                    @DisklySupport
+                                </a>
+                            </div>
+                        </div>
+
+                        <!-- Telegram Channel -->
+                        <div class="col-md-4">
+                            <div class="bg-secondary bg-opacity-25 rounded-4 p-4 text-center border border-secondary border-opacity-25 h-100 transition-all hover-translate-y">
+                                <i class="fa-solid fa-bullhorn text-warning fs-2 mb-3"></i>
+                                <h5 class="fw-bold text-white mb-2">Official Channel</h5>
+                                <p class="text-light opacity-50 small mb-3">Latest news and announcements</p>
+                                <a href="https://t.me/DisklyOfficial" target="_blank" class="btn btn-sm btn-warning px-3 rounded-pill fw-bold text-decoration-none">
+                                    @DisklyOfficial
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="alert alert-light mt-5 mb-0 small text-center rounded-4 border border-secondary border-opacity-25">
+                        For faster resolution, please include your <b>Admin Email</b> or <b>Share ID</b> when contacting support.
+                    </div>
+
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}

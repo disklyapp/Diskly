@@ -24,6 +24,8 @@
                 <option value="newest">Newest First</option>
                 <option value="earnings">Most Earnings</option>
                 <option value="balance">Highest Balance</option>
+                <option value="videos">Videos Uploaded</option>
+                <option value="storage">Storage Consumed</option>
             </select>
         </div>
     </div>
@@ -73,6 +75,8 @@
                         </th>
                         <th class="py-3 px-4 text-uppercase small text-light opacity-75 fw-semibold border-0">Admin ID</th>
                         <th class="py-3 px-4 text-uppercase small text-light opacity-75 fw-semibold border-0">Email</th>
+                        <th class="py-3 px-4 text-uppercase small text-light opacity-75 fw-semibold border-0 text-center">Total Videos</th>
+                        <th class="py-3 px-4 text-uppercase small text-light opacity-75 fw-semibold border-0 text-center">Storage Consumed</th>
                         <th class="py-3 px-4 text-uppercase small text-light opacity-75 fw-semibold border-0">Earnings / Balance</th>
                         <th class="py-3 px-4 text-uppercase small text-light opacity-75 fw-semibold border-0">Limits (Daily/Monthly)</th>
                         <th class="py-3 px-4 text-uppercase small text-light opacity-75 fw-semibold border-0 text-center">Status</th>
@@ -82,7 +86,7 @@
                 <tbody class="border-top-0">
                     {% if admins %}
                         {% for admin in admins %}
-                        <tr class="admin-row" data-id="{{ admin.id }}" data-email="{{ admin.email | lower }}" data-earnings="{{ admin.totalEarnings }}" data-balance="{{ admin.balance }}">
+                        <tr class="admin-row" data-id="{{ admin.id }}" data-email="{{ admin.email | lower }}" data-earnings="{{ admin.totalEarnings }}" data-balance="{{ admin.balance }}" data-videos="{{ admin.totalVideos }}" data-storage="{{ admin.totalStorage }}">
                             <td class="py-3 px-4">
                                 <input type="checkbox" class="admin-select-checkbox form-check-input" value="{{ admin.id }}">
                             </td>
@@ -91,15 +95,28 @@
                                 <div class="fw-bold text-white">{{ admin.email }}</div>
                                 <div class="small text-light opacity-50">Joined: {{ admin.createdAt[:10] }}</div>
                             </td>
+                            <td class="py-3 px-4 text-white text-center fw-bold">{{ admin.totalVideos }}</td>
+                            <td class="py-3 px-4 text-white text-center fw-bold">
+                                {% if admin.totalStorage >= 1073741824 %}
+                                    {{ (admin.totalStorage / 1073741824) | round(2) }} GB
+                                {% elif admin.totalStorage >= 1048576 %}
+                                    {{ (admin.totalStorage / 1048576) | round(2) }} MB
+                                {% elif admin.totalStorage >= 1024 %}
+                                    {{ (admin.totalStorage / 1024) | round(2) }} KB
+                                {% else %}
+                                    {{ admin.totalStorage }} B
+                                {% endif %}
+                            </td>
                             <td class="py-3 px-4">
                                 <div class="text-white fw-bold">${{ admin.totalEarnings }}</div>
                                 <div class="small text-warning">Bal: ${{ admin.balance }}</div>
                             </td>
                             <td class="py-3 px-4">
-                                <span class="badge bg-secondary mb-1 d-block text-start" style="font-size: 11px;">{{ admin.dailyUploadLimit }} Daily</span>
-                                <span class="badge bg-secondary mb-1 d-block text-start" style="font-size: 11px;">{{ admin.monthlyUploadLimit }} Monthly</span>
-                                <span class="badge bg-info mb-1 d-block text-start text-dark" style="font-size: 11px;">🌐 Web Max: {{ admin.maxUploadSizeWebsite }} MB</span>
-                                <span class="badge bg-info mb-1 d-block text-start text-dark" style="font-size: 11px;">✈️ TG Max: {{ admin.maxUploadSizeTelegram }} MB</span>
+                                <span class="badge bg-secondary mb-1 d-block text-start" style="font-size: 11px;">{{ admin.dailyUploadLimit if admin.dailyUploadLimit is not none else 'Unlimited' }} Daily</span>
+                                <span class="badge bg-secondary mb-1 d-block text-start" style="font-size: 11px;">{{ admin.monthlyUploadLimit if admin.monthlyUploadLimit is not none else 'Unlimited' }} Monthly</span>
+                                <span class="badge bg-info mb-1 d-block text-start text-dark" style="font-size: 11px;">🌐 Web Max: {{ admin.maxUploadSizeWebsite if admin.maxUploadSizeWebsite is not none else 'Unlimited' }} MB</span>
+                                <span class="badge bg-info mb-1 d-block text-start text-dark" style="font-size: 11px;">✈️ TG Max: {{ admin.maxUploadSizeTelegram if admin.maxUploadSizeTelegram is not none else 'Unlimited' }} MB</span>
+                                <span class="badge bg-primary mb-1 d-block text-start text-white" style="font-size: 11px;">💰 Threshold: {{ admin.minimumPayoutThreshold if admin.minimumPayoutThreshold is not none else 'Unlimited' }} USD</span>
                             </td>
                             <td class="py-3 px-4 text-center">
                                 {% if admin.isActive %}
@@ -115,10 +132,11 @@
                                             data-email="{{ admin.email }}"
                                             data-name="{{ admin.name or '' }}"
                                             data-balance="{{ admin.balance }}"
-                                            data-daily="{{ admin.dailyUploadLimit }}"
-                                            data-monthly="{{ admin.monthlyUploadLimit }}"
-                                            data-maxwebsite="{{ admin.maxUploadSizeWebsite }}"
-                                            data-maxtelegram="{{ admin.maxUploadSizeTelegram }}"
+                                            data-daily="{{ admin.dailyUploadLimit if admin.dailyUploadLimit is not none else '' }}"
+                                            data-monthly="{{ admin.monthlyUploadLimit if admin.monthlyUploadLimit is not none else '' }}"
+                                            data-maxwebsite="{{ admin.maxUploadSizeWebsite if admin.maxUploadSizeWebsite is not none else '' }}"
+                                            data-maxtelegram="{{ admin.maxUploadSizeTelegram if admin.maxUploadSizeTelegram is not none else '' }}"
+                                            data-payoutthreshold="{{ admin.minimumPayoutThreshold if admin.minimumPayoutThreshold is not none else '' }}"
                                             data-active="{{ 'true' if admin.isActive else 'false' }}"
                                             onclick="openEditAdminModal(this)">Edit</button>
                                     {% if admin.isActive %}
@@ -167,22 +185,26 @@
             <div class="row mb-3">
                 <div class="col-md-6">
                     <label class="form-label">Daily Limit</label>
-                    <input type="number" id="editAdminDaily" class="form-control bg-secondary text-white border-0" required>
+                    <input type="number" id="editAdminDaily" class="form-control bg-secondary text-white border-0" placeholder="Unlimited">
                 </div>
                 <div class="col-md-6">
                     <label class="form-label">Monthly Limit</label>
-                    <input type="number" id="editAdminMonthly" class="form-control bg-secondary text-white border-0" required>
+                    <input type="number" id="editAdminMonthly" class="form-control bg-secondary text-white border-0" placeholder="Unlimited">
                 </div>
             </div>
             <div class="row mb-3">
                 <div class="col-md-6">
                     <label class="form-label">Website Max Size (MB)</label>
-                    <input type="number" id="editAdminMaxWebsite" class="form-control bg-secondary text-white border-0" required>
+                    <input type="number" id="editAdminMaxWebsite" class="form-control bg-secondary text-white border-0" placeholder="Global setting default">
                 </div>
                 <div class="col-md-6">
                     <label class="form-label">Telegram Max Size (MB)</label>
-                    <input type="number" id="editAdminMaxTelegram" class="form-control bg-secondary text-white border-0" required>
+                    <input type="number" id="editAdminMaxTelegram" class="form-control bg-secondary text-white border-0" placeholder="Global setting default">
                 </div>
+            </div>
+            <div class="mb-3">
+                <label class="form-label">Payment Threshold ($)</label>
+                <input type="number" step="0.01" id="editAdminPayoutThreshold" class="form-control bg-secondary text-white border-0" placeholder="Unlimited (0 or blank)">
             </div>
             <div class="mb-3">
                 <label class="form-label">Account Status</label>
@@ -208,8 +230,9 @@
         document.getElementById("editAdminBalance").value = btn.getAttribute("data-balance");
         document.getElementById("editAdminDaily").value = btn.getAttribute("data-daily");
         document.getElementById("editAdminMonthly").value = btn.getAttribute("data-monthly");
-        document.getElementById("editAdminMaxWebsite").value = btn.getAttribute("data-maxwebsite") || "1000";
-        document.getElementById("editAdminMaxTelegram").value = btn.getAttribute("data-maxtelegram") || "200";
+        document.getElementById("editAdminMaxWebsite").value = btn.getAttribute("data-maxwebsite");
+        document.getElementById("editAdminMaxTelegram").value = btn.getAttribute("data-maxtelegram");
+        document.getElementById("editAdminPayoutThreshold").value = btn.getAttribute("data-payoutthreshold");
         document.getElementById("editAdminStatus").value = btn.getAttribute("data-active") === "true" ? "true" : "false";
         
         editAdminModalInstance = new bootstrap.Modal(document.getElementById('editAdminModal'));
@@ -223,10 +246,11 @@
             email: document.getElementById("editAdminEmail").value.trim(),
             name: document.getElementById("editAdminName").value.trim(),
             balance: parseFloat(document.getElementById("editAdminBalance").value),
-            dailyUploadLimit: parseInt(document.getElementById("editAdminDaily").value),
-            monthlyUploadLimit: parseInt(document.getElementById("editAdminMonthly").value),
-            maxUploadSizeWebsite: parseInt(document.getElementById("editAdminMaxWebsite").value),
-            maxUploadSizeTelegram: parseInt(document.getElementById("editAdminMaxTelegram").value),
+            dailyUploadLimit: document.getElementById("editAdminDaily").value.trim() !== "" ? parseInt(document.getElementById("editAdminDaily").value) : null,
+            monthlyUploadLimit: document.getElementById("editAdminMonthly").value.trim() !== "" ? parseInt(document.getElementById("editAdminMonthly").value) : null,
+            maxUploadSizeWebsite: document.getElementById("editAdminMaxWebsite").value.trim() !== "" ? parseInt(document.getElementById("editAdminMaxWebsite").value) : null,
+            maxUploadSizeTelegram: document.getElementById("editAdminMaxTelegram").value.trim() !== "" ? parseInt(document.getElementById("editAdminMaxTelegram").value) : null,
+            minimumPayoutThreshold: document.getElementById("editAdminPayoutThreshold").value.trim() !== "" ? parseFloat(document.getElementById("editAdminPayoutThreshold").value) : null,
             isActive: document.getElementById("editAdminStatus").value === "true"
         };
 
@@ -286,6 +310,8 @@
         items.sort((a, b) => {
             if (val === 'earnings') return parseFloat(b.dataset.earnings) - parseFloat(a.dataset.earnings);
             if (val === 'balance') return parseFloat(b.dataset.balance) - parseFloat(a.dataset.balance);
+            if (val === 'videos') return parseInt(b.dataset.videos) - parseInt(a.dataset.videos);
+            if (val === 'storage') return parseFloat(b.dataset.storage) - parseFloat(a.dataset.storage);
             return parseInt(b.dataset.id) - parseInt(a.dataset.id);
         });
         

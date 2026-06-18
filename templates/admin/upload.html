@@ -36,7 +36,8 @@
                         <h5 class="fw-bold mb-2">Choose Video File</h5>
 
                         <p class="text-muted small mb-4">
-                            Supported formats: MP4, MOV, AVI, MKV
+                            Supported formats: MP4, MOV, AVI, MKV <br>
+                            Max upload size: <span id="maxSizeDisplay" class="fw-bold text-white">Loading...</span>
                         </p>
 
                         <input type="file"
@@ -132,6 +133,19 @@
                         Uploaded videos will appear in your dashboard automatically.
                     </div>
 
+                    <!-- Progress Container -->
+                    <div id="progressContainer" class="d-none mt-4">
+                        <div class="progress bg-black" style="height: 25px; border-radius: 50px; border: 1px solid rgba(255,255,255,0.1);">
+                            <div id="progressBar" class="progress-bar progress-bar-striped progress-bar-animated bg-success" role="progressbar" style="width: 0%;" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100">0%</div>
+                        </div>
+                        <div class="text-center mt-2 small text-light opacity-75">
+                            Uploaded <span id="uploadedBytes">0 MB</span> of <span id="totalBytes">0 MB</span>
+                        </div>
+                        <div class="alert alert-warning mt-3 mb-0 rounded-4 text-center py-2" role="alert" style="font-size: 0.85rem;">
+                            <i class="fa-solid fa-triangle-exclamation text-warning me-2"></i> Please stay on this page until the upload is completed.
+                        </div>
+                    </div>
+
                 </div>
 
             </div>
@@ -182,6 +196,32 @@
 <script>
     const token = "{{ token }}";
     const apiBaseUrl = "{{ api_base_url }}";
+    let maxUploadSizeMb = 500; // Default global limit fallback
+
+    async function loadAccountLimits() {
+        try {
+            const res = await fetch(`${apiBaseUrl}/api/admin/account`, {
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            });
+            if (res.ok) {
+                const data = await res.json();
+                if (data.maxUploadSizeWebsite !== null && data.maxUploadSizeWebsite !== undefined) {
+                    maxUploadSizeMb = data.maxUploadSizeWebsite;
+                } else if (data.minimumPayoutThreshold !== undefined) {
+                    // Fallback to setting-provided size limit if account-specific is null
+                    // Let's call setting API or default to 500 MB
+                    maxUploadSizeMb = 500;
+                }
+                document.getElementById('maxSizeDisplay').innerText = `${maxUploadSizeMb} MB`;
+            }
+        } catch (err) {
+            console.error("Failed to load account limits:", err);
+            document.getElementById('maxSizeDisplay').innerText = `${maxUploadSizeMb} MB`;
+        }
+    }
+    loadAccountLimits();
 
     function handleFileSelect(input) {
         const titleInput = document.getElementById('titleInput');
@@ -190,7 +230,19 @@
         const nameSpan = document.getElementById('fileNameSpan');
 
         if (input.files.length > 0) {
-            let filename = input.files[0].name;
+            const file = input.files[0];
+            const fileSizeMb = file.size / (1024 * 1024);
+
+            if (fileSizeMb > maxUploadSizeMb) {
+                alert(`File size (${fileSizeMb.toFixed(2)} MB) exceeds the maximum limit of ${maxUploadSizeMb} MB.`);
+                input.value = ""; // Clear file selection
+                display.classList.add('d-none');
+                uploadBtn.classList.remove('btn-primary-green');
+                uploadBtn.classList.add('btn-secondary');
+                return;
+            }
+
+            let filename = file.name;
             
             // Show filename UI
             nameSpan.innerText = filename;
@@ -215,35 +267,144 @@
     document.getElementById('uploadForm').addEventListener('submit', async (e) => {
         e.preventDefault();
         
-        const form = e.target;
-        const formData = new FormData(form);
-        const submitBtn = document.getElementById('uploadBtn');
-        const originalText = submitBtn.innerHTML;
+        const videoInput = document.getElementById('videoInput');
+        if (videoInput.files.length === 0) {
+            alert("Please select a video file first.");
+            return;
+        }
+
+        const file = videoInput.files[0];
+        const title = document.getElementById('titleInput').value.trim() || file.name;
         
+        const submitBtn = document.getElementById('uploadBtn');
+        const progressContainer = document.getElementById('progressContainer');
+        const progressBar = document.getElementById('progressBar');
+        const uploadedBytesSpan = document.getElementById('uploadedBytes');
+        const totalBytesSpan = document.getElementById('totalBytes');
+        const originalText = submitBtn.innerHTML;
+
         submitBtn.disabled = true;
         submitBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin me-2"></i>Uploading... Please wait';
+        progressContainer.classList.remove('d-none');
+
+        const CHUNK_SIZE = 5 * 1024 * 1024; // 5MB chunks
+        const totalChunks = Math.ceil(file.size / CHUNK_SIZE);
+        let uploadId = "";
 
         try {
-            const res = await fetch(`${apiBaseUrl}/api/admin/videos`, {
-                method: 'POST',
+            // Step 1: Initialize Chunked Upload
+            const initRes = await fetch(`${apiBaseUrl}/api/admin/videos/chunk/init`, {
+                method: "POST",
                 headers: {
-                    'Authorization': `Bearer ${token}`
+                    "Content-Type": "application/json",
+                    "Authorization": `Bearer ${token}`
                 },
-                body: formData
+                body: JSON.stringify({
+                    title: title,
+                    filename: file.name,
+                    fileSize: file.size
+                })
             });
 
-            const data = await res.json();
-            
-            if(res.ok) {
-                alert("Video uploaded successfully to Backblaze!");
-                window.location.href = '/admin/videos';
-            } else {
-                alert(data.error || data.details || "Upload failed");
+            if (!initRes.ok) {
+                const initData = await initRes.json();
+                throw new Error(initData.error || "Initialization failed");
             }
+
+            const initData = await initRes.json();
+            uploadId = initData.uploadId;
+
+            // Step 2: Upload Chunks sequentially
+            for (let chunkIndex = 0; chunkIndex < totalChunks; chunkIndex++) {
+                const start = chunkIndex * CHUNK_SIZE;
+                const end = Math.min(start + CHUNK_SIZE, file.size);
+                const chunkBlob = file.slice(start, end);
+
+                const chunkForm = new FormData();
+                chunkForm.append("uploadId", uploadId);
+                chunkForm.append("chunkIndex", chunkIndex);
+                chunkForm.append("video", chunkBlob, file.name);
+
+                let uploadSuccess = false;
+                let retryCount = 0;
+
+                while (!uploadSuccess && retryCount < 3) {
+                    try {
+                        const chunkRes = await new Promise((resolve, reject) => {
+                            const xhr = new XMLHttpRequest();
+                            xhr.open("POST", `${apiBaseUrl}/api/admin/videos/chunk/upload`);
+                            xhr.setRequestHeader("Authorization", `Bearer ${token}`);
+                            
+                            xhr.upload.addEventListener("progress", (event) => {
+                                if (event.lengthComputable) {
+                                    const chunkProgress = event.loaded / event.total;
+                                    const overallProgress = ((chunkIndex + chunkProgress) / totalChunks) * 100;
+                                    const percent = Math.round(overallProgress);
+                                    progressBar.style.width = percent + '%';
+                                    progressBar.setAttribute('aria-valuenow', percent);
+                                    progressBar.innerText = percent + '%';
+
+                                    const loadedBytes = start + event.loaded;
+                                    uploadedBytesSpan.innerText = (loadedBytes / (1024 * 1024)).toFixed(2) + ' MB';
+                                    totalBytesSpan.innerText = (file.size / (1024 * 1024)).toFixed(2) + ' MB';
+                                }
+                            });
+
+                            xhr.addEventListener("load", () => {
+                                if (xhr.status >= 200 && xhr.status < 300) {
+                                    resolve(true);
+                                } else {
+                                    reject(new Error("Status: " + xhr.status));
+                                }
+                            });
+
+                            xhr.addEventListener("error", () => reject(new Error("Network error")));
+                            xhr.send(chunkForm);
+                        });
+
+                        uploadSuccess = true;
+                    } catch (chunkErr) {
+                        retryCount++;
+                        console.warn(`Retry chunk ${chunkIndex} (Attempt ${retryCount}/3):`, chunkErr);
+                        if (retryCount >= 3) {
+                            throw new Error(`Failed to upload chunk ${chunkIndex} after 3 attempts.`);
+                        }
+                    }
+                }
+            }
+
+            // Step 3: Complete Chunked Upload
+            submitBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin me-2"></i>Merging chunks on server... Please wait';
+            progressBar.style.width = '100%';
+            progressBar.innerText = 'Processing...';
+
+            const completeRes = await fetch(`${apiBaseUrl}/api/admin/videos/chunk/complete`, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "Authorization": `Bearer ${token}`
+                },
+                body: JSON.stringify({
+                    uploadId: uploadId,
+                    title: title,
+                    filename: file.name,
+                    totalChunks: totalChunks,
+                    description: ""
+                })
+            });
+
+            if (!completeRes.ok) {
+                const completeData = await completeRes.json();
+                throw new Error(completeData.error || "Completion failed");
+            }
+
+            alert("Video uploaded and published successfully!");
+            window.location.href = '/admin/videos';
+
         } catch (err) {
             console.error(err);
-            alert("Error connecting to upload server");
-        } finally {
+            alert("Upload failed: " + err.message);
+            progressContainer.classList.add('d-none');
             submitBtn.disabled = false;
             submitBtn.innerHTML = originalText;
         }

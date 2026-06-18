@@ -126,6 +126,12 @@ def telegram():
         return redirect('/admin/login')
     return render_template('admin/telegram.html', api_base_url=API_BASE_URL)
 
+@app.route('/admin/support')
+def admin_support():
+    if 'token' not in session:
+        return redirect('/admin/login')
+    return render_template('admin/support.html')
+
 @app.route('/contact')
 def contact():
     return render_template('contactus.html')
@@ -651,11 +657,15 @@ def superadmin_settings():
             earning_rate = float(request.form.get('earningRatePer1000Views', 0))
             telegram_enabled = request.form.get('telegramUploadEnabled') == 'on'
             min_payout = float(request.form.get('minimumPayoutThreshold', 0))
+            default_max_web = int(request.form.get('defaultMaxUploadSizeWebsite', 500))
+            default_max_tg = int(request.form.get('defaultMaxUploadSizeTelegram', 500))
             
             payload = {
                 "earningRatePer1000Views": earning_rate,
                 "telegramUploadEnabled": telegram_enabled,
-                "minimumPayoutThreshold": min_payout
+                "minimumPayoutThreshold": min_payout,
+                "defaultMaxUploadSizeWebsite": default_max_web,
+                "defaultMaxUploadSizeTelegram": default_max_tg
             }
             
             response = requests.put(api_url, headers=headers, json=payload)
@@ -669,7 +679,7 @@ def superadmin_settings():
         except ValueError:
              flash("Invalid numeric value provided.")
         except Exception as e:
-            flash("Server connection failed.")
+             flash("Server connection failed.")
         return redirect('/superadmin/settings')
 
     # GET request

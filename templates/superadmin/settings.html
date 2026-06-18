@@ -48,6 +48,19 @@
                         <div class="form-text text-light opacity-50 small mt-2">Admins must reach this balance before they can request a withdrawal.</div>
                     </div>
 
+                    <h5 class="fw-bold text-white mb-4 border-bottom border-secondary border-opacity-50 pb-3">Upload Limit Settings</h5>
+                    
+                    <div class="row mb-4">
+                        <div class="col-md-6 mb-3 mb-md-0">
+                            <label class="form-label text-light opacity-75 fw-semibold small text-uppercase">Default Website Max Size (MB)</label>
+                            <input type="number" class="form-control bg-black text-white border-secondary" name="defaultMaxUploadSizeWebsite" value="{{ settings.defaultMaxUploadSizeWebsite }}" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label text-light opacity-75 fw-semibold small text-uppercase">Default Telegram Max Size (MB)</label>
+                            <input type="number" class="form-control bg-black text-white border-secondary" name="defaultMaxUploadSizeTelegram" value="{{ settings.defaultMaxUploadSizeTelegram }}" required>
+                        </div>
+                    </div>
+
                     <h5 class="fw-bold text-white mb-4 border-bottom border-secondary border-opacity-50 pb-3">Feature Toggles</h5>
                     
                     <div class="mb-5">
