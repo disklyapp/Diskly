@@ -39,6 +39,7 @@
         <div class="col-md-4">
             <select id="sortSelect" class="form-select">
                 <option value="newest">Newest First</option>
+                <option value="oldest">Oldest First</option>
                 <option value="views">Most Views</option>
                 <option value="likes">Most Likes</option>
                 <option value="downloads">Most Reports</option>
@@ -331,6 +332,7 @@
             if (val === 'views') return parseInt(b.dataset.views) - parseInt(a.dataset.views);
             if (val === 'likes') return parseInt(b.dataset.likes) - parseInt(a.dataset.likes);
             if (val === 'downloads') return parseInt(b.dataset.downloads) - parseInt(a.dataset.downloads);
+            if (val === 'oldest') return parseInt(a.dataset.id) - parseInt(b.dataset.id);
             // Default to newest (we use ID as proxy for date here since they are appended in order)
             return parseInt(b.dataset.id) - parseInt(a.dataset.id);
         });
