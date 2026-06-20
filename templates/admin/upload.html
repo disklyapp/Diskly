@@ -358,6 +358,8 @@
                             });
 
                             xhr.addEventListener("error", () => reject(new Error("Network error")));
+                            xhr.timeout = 60000; // 60 seconds timeout
+                            xhr.addEventListener("timeout", () => reject(new Error("Request timeout")));
                             xhr.send(chunkForm);
                         });
 
