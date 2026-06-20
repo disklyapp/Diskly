@@ -211,8 +211,7 @@
                     maxUploadSizeMb = data.maxUploadSizeWebsite;
                 } else if (data.minimumPayoutThreshold !== undefined) {
                     // Fallback to setting-provided size limit if account-specific is null
-                    // Let's call setting API or default to 500 MB
-                    maxUploadSizeMb = 500;
+                    maxUploadSizeMb = data.defaultMaxUploadSizeWebsite || 500;
                 }
                 document.getElementById('maxSizeDisplay').innerText = `${maxUploadSizeMb} MB`;
             }

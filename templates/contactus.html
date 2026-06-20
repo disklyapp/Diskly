@@ -22,31 +22,31 @@
             <div class="col-lg-8">
                 <div
                     class="bg-dark bg-opacity-50 rounded-4 p-4 p-md-5 border border-secondary border-opacity-25 shadow-lg">
-                    <form>
+                    <form id="contactForm">
                         <div class="row g-4">
                             <div class="col-md-6">
                                 <label for="name" class="form-label text-light fw-medium">Your Name</label>
                                 <input type="text"
                                     class="form-control bg-black bg-opacity-50 border-secondary border-opacity-50 text-white shadow-none px-3 py-2"
-                                    id="name" placeholder="John Doe">
+                                    id="name" placeholder="John Doe" required>
                             </div>
                             <div class="col-md-6">
                                 <label for="email" class="form-label text-light fw-medium">Email Address</label>
                                 <input type="email"
                                     class="form-control bg-black bg-opacity-50 border-secondary border-opacity-50 text-white shadow-none px-3 py-2"
-                                    id="email" placeholder="john@example.com">
+                                    id="email" placeholder="john@example.com" required>
                             </div>
                             <div class="col-12">
                                 <label for="subject" class="form-label text-light fw-medium">Subject</label>
                                 <input type="text"
                                     class="form-control bg-black bg-opacity-50 border-secondary border-opacity-50 text-white shadow-none px-3 py-2"
-                                    id="subject" placeholder="How can we help you?">
+                                    id="subject" placeholder="How can we help you?" required>
                             </div>
                             <div class="col-12">
                                 <label for="message" class="form-label text-light fw-medium">Message</label>
                                 <textarea
                                     class="form-control bg-black bg-opacity-50 border-secondary border-opacity-50 text-white shadow-none px-3 py-2"
-                                    id="message" rows="5" placeholder="Write your message here..."></textarea>
+                                    id="message" rows="5" placeholder="Write your message here..." required></textarea>
                             </div>
                             <div class="col-12 mt-4 text-center">
                                 <button type="submit"
@@ -99,5 +99,19 @@
     </div>
 </section>
 
+<script>
+document.getElementById('contactForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    const name = document.getElementById('name').value.trim();
+    const email = document.getElementById('email').value.trim();
+    const subject = document.getElementById('subject').value.trim();
+    const message = document.getElementById('message').value.trim();
+
+    const bodyText = `Hi Diskly Team,\n\nName: ${name}\nEmail: ${email}\n\nMessage:\n${message}`;
+    const mailtoUrl = `mailto:disklyteam@gmail.com?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(bodyText)}`;
+    
+    window.location.href = mailtoUrl;
+});
+</script>
 
 {% endblock %}
