@@ -490,17 +490,38 @@ def superadmin_videos():
     
     api_url = f"{API_BASE_URL}/api/superadmin/videos"
     headers = {"Authorization": f"Bearer {session['superadmin_token']}"}
+    videos_data = []
     try:
         response = requests.get(api_url, headers=headers)
         if response.status_code == 200:
             videos_data = response.json()
         else:
-            videos_data = []
             flash(response.json().get("error", "Failed to load videos."))
     except Exception as e:
-        videos_data = []
         flash("Server connection failed.")
-    return render_template("superadmin/videos.html", videos=videos_data)
+
+    admins_data = []
+    try:
+        adm_res = requests.get(f"{API_BASE_URL}/api/superadmin/admins", headers=headers)
+        if adm_res.status_code == 200:
+            admins_data = adm_res.json()
+    except Exception:
+        pass
+
+    return render_template("superadmin/videos.html", videos=videos_data, admins=admins_data)
+
+@app.route('/superadmin/videos/bulk-delete', methods=['POST'])
+def superadmin_bulk_delete_videos():
+    if 'superadmin_token' not in session:
+        return Response(json.dumps({"error": "Unauthorized"}), status=401, mimetype='application/json')
+    
+    api_url = f"{API_BASE_URL}/api/superadmin/videos/bulk-delete"
+    headers = {"Authorization": f"Bearer {session['superadmin_token']}"}
+    try:
+        response = requests.post(api_url, headers=headers, json=request.json)
+        return Response(response.text, status=response.status_code, mimetype='application/json')
+    except Exception as e:
+        return Response(json.dumps({"error": "Server connection failed"}), status=500, mimetype='application/json')
 
 @app.route('/superadmin/admins', methods=['GET'])
 def superadmin_admins():
@@ -667,12 +688,19 @@ def superadmin_settings():
             default_max_web = int(request.form.get('defaultMaxUploadSizeWebsite', 500))
             default_max_tg = int(request.form.get('defaultMaxUploadSizeTelegram', 500))
             
+            default_storage = request.form.get('defaultMaxStorageGb')
+            default_storage_val = float(default_storage) if default_storage and default_storage.strip() != "" else None
+            default_file_size = request.form.get('defaultMaxFileSizeMb')
+            default_file_size_val = int(default_file_size) if default_file_size and default_file_size.strip() != "" else 2000
+
             payload = {
                 "earningRatePer1000Views": earning_rate,
                 "telegramUploadEnabled": telegram_enabled,
                 "minimumPayoutThreshold": min_payout,
                 "defaultMaxUploadSizeWebsite": default_max_web,
-                "defaultMaxUploadSizeTelegram": default_max_tg
+                "defaultMaxUploadSizeTelegram": default_max_tg,
+                "defaultMaxStorageGb": default_storage_val,
+                "defaultMaxFileSizeMb": default_file_size_val
             }
             
             response = requests.put(api_url, headers=headers, json=payload)

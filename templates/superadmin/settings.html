@@ -48,18 +48,28 @@
                         <div class="form-text text-light opacity-50 small mt-2">Admins must reach this balance before they can request a withdrawal.</div>
                     </div>
 
-                    <h5 class="fw-bold text-white mb-4 border-bottom border-secondary border-opacity-50 pb-3">Upload Limit Settings</h5>
+                    <h5 class="fw-bold text-white mb-4 border-bottom border-secondary border-opacity-50 pb-3">Storage-Based Upload Limits</h5>
                     
                     <div class="row mb-4">
                         <div class="col-md-6 mb-3 mb-md-0">
-                            <label class="form-label text-light opacity-75 fw-semibold small text-uppercase">Default Website Max Size (MB)</label>
-                            <input type="number" class="form-control bg-black text-white border-secondary" name="defaultMaxUploadSizeWebsite" value="{{ settings.defaultMaxUploadSizeWebsite }}" required>
+                            <label class="form-label text-light opacity-75 fw-semibold small text-uppercase">Default Maximum Storage Limit (GB)</label>
+                            <div class="input-group">
+                                <input type="number" step="0.1" class="form-control bg-black text-white border-secondary" name="defaultMaxStorageGb" value="{{ settings.defaultMaxStorageGb if settings.defaultMaxStorageGb is not none else 100 }}" placeholder="e.g. 100 (Leave empty for Unlimited)">
+                                <span class="input-group-text bg-black border-secondary text-white opacity-75">GB</span>
+                            </div>
+                            <div class="form-text text-light opacity-50 small mt-2">Applies to all newly registered admins unless overridden individually.</div>
                         </div>
                         <div class="col-md-6">
-                            <label class="form-label text-light opacity-75 fw-semibold small text-uppercase">Default Telegram Max Size (MB)</label>
-                            <input type="number" class="form-control bg-black text-white border-secondary" name="defaultMaxUploadSizeTelegram" value="{{ settings.defaultMaxUploadSizeTelegram }}" required>
+                            <label class="form-label text-light opacity-75 fw-semibold small text-uppercase">Default Maximum Per-File Size (MB)</label>
+                            <div class="input-group">
+                                <input type="number" class="form-control bg-black text-white border-secondary" name="defaultMaxFileSizeMb" value="{{ settings.defaultMaxFileSizeMb if settings.defaultMaxFileSizeMb is not none else 2000 }}" required>
+                                <span class="input-group-text bg-black border-secondary text-white opacity-75">MB</span>
+                            </div>
+                            <div class="form-text text-light opacity-50 small mt-2">Maximum allowed single video upload size platform-wide (e.g. 2000 MB = 2 GB).</div>
                         </div>
                     </div>
+                    <input type="hidden" name="defaultMaxUploadSizeWebsite" value="{{ settings.defaultMaxFileSizeMb or 2000 }}">
+                    <input type="hidden" name="defaultMaxUploadSizeTelegram" value="{{ settings.defaultMaxFileSizeMb or 2000 }}">
 
                     <h5 class="fw-bold text-white mb-4 border-bottom border-secondary border-opacity-50 pb-3">Feature Toggles</h5>
                     

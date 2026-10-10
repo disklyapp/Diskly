@@ -1,143 +1,394 @@
 {% extends 'superadmin/base.html' %}
 
 {% block content %}
-<div class="container-fluid">
-    <h3 class="mb-4">Global Videos</h3>
+<div class="container-fluid py-4">
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-md-center flex-column flex-md-row gap-3 mb-4">
+        <div>
+            <h2 class="fw-bold text-white mb-1"><i class="fa-solid fa-film text-primary-green me-2"></i>Global Videos Management</h2>
+            <p class="text-light opacity-75 small mb-0">Manage all platform videos, analyze storage and views, and perform bulk operations</p>
+        </div>
+        <div class="d-flex align-items-center gap-2">
+            <span class="badge bg-secondary px-3 py-2 fs-6">
+                <i class="fa-solid fa-video me-1"></i> Total: <strong id="totalVideosCount">{{ videos|length }}</strong>
+            </span>
+        </div>
+    </div>
 
     {% with messages = get_flashed_messages() %}
         {% if messages %}
             {% for message in messages %}
-                <div class="alert alert-info">{{ message }}</div>
+                <div class="alert alert-info rounded-4 border-0 shadow-sm">{{ message }}</div>
             {% endfor %}
         {% endif %}
     {% endwith %}
 
-    <!-- Search & Filter -->
-    <div class="row mb-4 g-2">
-        <div class="col-md-8">
-            <input id="searchInput" class="form-control bg-secondary text-white border-secondary" placeholder="Search videos by title or description...">
-        </div>
-        <div class="col-md-4">
-            <select id="sortSelect" class="form-select bg-secondary text-white border-secondary">
-                <option value="newest">Newest First</option>
-                <option value="views">Most Views</option>
-                <option value="likes">Most Likes</option>
-                <option value="downloads">Most Reports</option>
-            </select>
+    <!-- Filter & Sort Controls -->
+    <div class="card bg-dark bg-opacity-50 border-0 rounded-4 p-3 mb-4 border border-secondary border-opacity-25 shadow-sm">
+        <div class="row g-3 align-items-center">
+            <!-- Search -->
+            <div class="col-lg-5 col-md-12">
+                <div class="input-group">
+                    <span class="input-group-text bg-secondary border-0 text-light opacity-75">
+                        <i class="fa-solid fa-magnifying-glass"></i>
+                    </span>
+                    <input id="searchInput" class="form-control bg-secondary text-white border-0 shadow-none" placeholder="Search by title, ID or description...">
+                </div>
+            </div>
+
+            <!-- Filter by Admin -->
+            <div class="col-lg-3 col-md-6">
+                <select id="adminFilter" class="form-select bg-secondary text-white border-0 shadow-none">
+                    <option value="ALL">All Admins (Filter by Admin)</option>
+                    {% if admins %}
+                        {% for adm in admins %}
+                            <option value="{{ adm.id }}">{{ adm.email }} (ID: {{ adm.id }})</option>
+                        {% endfor %}
+                    {% endif %}
+                </select>
+            </div>
+
+            <!-- Advanced Sorting -->
+            <div class="col-lg-4 col-md-6">
+                <div class="input-group">
+                    <span class="input-group-text bg-secondary border-0 text-light opacity-75 small">
+                        <i class="fa-solid fa-arrow-down-short-wide me-1"></i> Sort:
+                    </span>
+                    <select id="sortSelect" class="form-select bg-secondary text-white border-0 shadow-none">
+                        <option value="newest">Newest First</option>
+                        <option value="oldest">Oldest First</option>
+                        <option value="views_desc">Most Views</option>
+                        <option value="views_asc">Least Views</option>
+                        <option value="size_desc">Most Storage Used</option>
+                        <option value="size_asc">Least Storage Used</option>
+                    </select>
+                </div>
+            </div>
         </div>
     </div>
 
-    <div class="card bg-secondary text-white border-secondary mb-4">
-        <div class="card-body p-0">
-            <div class="table-responsive">
-                <table class="table custom-comparison-table table-hover mb-0 align-middle">
-                    <thead class="table-active border-secondary">
-                        <tr>
-                            <th class="ps-4">Video</th>
-                            <th>Uploader Email</th>
-                            <th>Stats (Views/Likes/Reports)</th>
-                            <th>Date Uploaded</th>
-                            <th>Action</th>
-                        </tr>
-                    </thead>
-                    <tbody class="border-secondary" id="videoTableBody">
-                        {% for video in videos %}
-                        <tr class="video-row" 
-                            data-title="{{ video.title | lower }}" 
-                            data-description="{{ video.description | lower if video.description else '' }}"
-                            data-views="{{ video.views }}" 
-                            data-likes="{{ video.likes }}" 
-                            data-downloads="{{ video.bookmarks }}"
-                            data-id="{{ video.id }}">
-                            <td class="ps-4">
-                                <div class="d-flex align-items-center gap-3">
-                                    <img src="{{ video.thumbnailUrl or 'https://placehold.co/120x80/041408/1f9c40?text=No+Thumb' }}" 
-                                         alt="Thumb" class="rounded" style="width: 120px; height: 80px; object-fit: cover;">
-                                    <div>
-                                        <h6 class="mb-1">{{ video.title }}</h6>
-                                        <small class="text-muted">ID: {{ video.id }}</small>
-                                        <br>
+    <!-- Bulk Action Sticky Bar (Hidden by default, shown when >= 1 selected) -->
+    <div id="bulkActionBar" class="card bg-danger bg-opacity-10 border border-danger border-opacity-50 rounded-4 p-3 mb-4 d-none shadow">
+        <div class="d-flex justify-content-between align-items-center flex-wrap gap-3">
+            <div class="d-flex align-items-center gap-3">
+                <span class="badge bg-danger fs-6 px-3 py-2 rounded-pill">
+                    <i class="fa-solid fa-check-double me-1"></i> <span id="selectedCount">0</span> selected
+                </span>
+                <span class="text-light opacity-75 small">
+                    Storage Selected: <strong class="text-white" id="selectedStorage">0 MB</strong>
+                </span>
+            </div>
+            <div class="d-flex gap-2">
+                <button type="button" class="btn btn-outline-light btn-sm rounded-pill px-3" onclick="clearSelections()">
+                    Clear Selection
+                </button>
+                <button type="button" class="btn btn-danger btn-sm rounded-pill px-4 fw-bold shadow-sm" onclick="bulkDeleteSelected()">
+                    <i class="fa-solid fa-trash me-1"></i> Bulk Delete Selected
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Videos Table -->
+    <div class="card bg-secondary bg-opacity-50 border-0 rounded-4 overflow-hidden shadow-sm border border-secondary border-opacity-25 p-3">
+        <div class="table-responsive">
+            <table class="table custom-comparison-table table-hover align-middle mb-0">
+                <thead class="border-bottom border-secondary border-opacity-50">
+                    <tr>
+                        <th class="py-3 px-3 text-uppercase small text-light opacity-75 fw-semibold border-0" style="width: 40px;">
+                            <input type="checkbox" id="selectAllVideos" class="form-check-input" title="Select all visible videos">
+                        </th>
+                        <th class="py-3 px-3 text-uppercase small text-light opacity-75 fw-semibold border-0" style="min-width: 280px;">Video</th>
+                        <th class="py-3 px-3 text-uppercase small text-light opacity-75 fw-semibold border-0">Admin</th>
+                        <th class="py-3 px-3 text-uppercase small text-light opacity-75 fw-semibold border-0 text-center">Storage Size</th>
+                        <th class="py-3 px-3 text-uppercase small text-light opacity-75 fw-semibold border-0 text-center">Views & Stats</th>
+                        <th class="py-3 px-3 text-uppercase small text-light opacity-75 fw-semibold border-0 text-center">Date Uploaded</th>
+                        <th class="py-3 px-3 text-uppercase small text-light opacity-75 fw-semibold border-0 text-end">Action</th>
+                    </tr>
+                </thead>
+                <tbody class="border-top-0" id="videoTableBody">
+                    {% for video in videos %}
+                    <tr class="video-row" 
+                        data-id="{{ video.id }}"
+                        data-title="{{ (video.title or '') | lower }}" 
+                        data-description="{{ (video.description or '') | lower }}"
+                        data-views="{{ video.views or 0 }}" 
+                        data-likes="{{ video.likes or 0 }}" 
+                        data-downloads="{{ video.bookmarks or 0 }}"
+                        data-size="{{ video.size or 0 }}"
+                        data-admin-id="{{ video.adminId or (video.admin.id if video.admin else '') }}"
+                        data-admin-email="{{ (video.admin.email if video.admin else '') | lower }}"
+                        data-created="{{ video.createdAt or '' }}">
+                        <td class="py-3 px-3">
+                            <input type="checkbox" class="video-select-checkbox form-check-input" value="{{ video.id }}" data-size="{{ video.size or 0 }}">
+                        </td>
+                        <td class="py-3 px-3">
+                            <div class="d-flex align-items-center gap-3">
+                                <img src="{{ video.thumbnailUrl or 'https://placehold.co/120x80/041408/1f9c40?text=No+Thumb' }}" 
+                                     alt="Thumb" class="rounded-3 shadow-sm" style="width: 100px; height: 65px; object-fit: cover;">
+                                <div>
+                                    <h6 class="mb-1 text-white fw-bold text-truncate" style="max-width: 320px;">{{ video.title }}</h6>
+                                    <small class="text-light opacity-50">ID: #{{ video.id }}</small>
+                                    <div class="mt-1">
                                         <a href="{{ video.streamUrl }}" target="_blank" class="text-info small text-decoration-none">
-                                            <i class="fa-solid fa-link"></i> View Stream
+                                            <i class="fa-solid fa-play me-1"></i> Preview Stream
+                                        </a>
+                                        <span class="text-light opacity-25 mx-1">|</span>
+                                        <a href="https://diskly.in/{{ video.downloadKey }}" target="_blank" class="text-primary-green small text-decoration-none">
+                                            <i class="fa-solid fa-link me-1"></i> Link
                                         </a>
                                     </div>
                                 </div>
-                            </td>
-                            <td>
-                                <span class="badge bg-secondary">{{ video.admin.email if video.admin else 'Unknown' }}</span>
-                            </td>
-                            <td>
-                                <div class="d-flex flex-column gap-1">
-                                    <span class="small opacity-75"><i class="fa-solid fa-eye me-1"></i> {{ video.views }}</span>
-                                    <span class="small opacity-75"><i class="fa-solid fa-heart me-1"></i> {{ video.likes }}</span>
-                                    <span class="small opacity-75 text-danger"><i class="fa-solid fa-flag me-1"></i> {{ video.bookmarks }} Reports</span>
-                                </div>
-                            </td>
-                            <td>
-                                {{ video.createdAt[:10] if video.createdAt else 'N/A' }}
-                            </td>
-                            <td>
-                                <button class="btn btn-sm btn-outline-danger" onclick="deleteVideo({{ video.id }})">
-                                    <i class="fa-solid fa-trash"></i>
-                                </button>
-                            </td>
-                        </tr>
-                        {% else %}
-                        <tr>
-                            <td colspan="5" class="text-center py-5 text-muted">
-                                <i class="fa-solid fa-film fs-2 mb-3"></i>
-                                <h5>No videos found</h5>
-                                <p>No videos have been uploaded to the platform yet.</p>
-                            </td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
+                            </div>
+                        </td>
+                        <td class="py-3 px-3">
+                            {% if video.admin %}
+                                <span class="badge bg-secondary text-white">{{ video.admin.email }}</span>
+                                <div class="small text-light opacity-50 mt-1">Admin #{{ video.admin.id }}</div>
+                            {% else %}
+                                <span class="badge bg-dark text-muted">Unknown</span>
+                            {% endif %}
+                        </td>
+                        <td class="py-3 px-3 text-center fw-bold text-white">
+                            {% if video.size %}
+                                {% if video.size >= 1073741824 %}
+                                    <span class="text-warning">{{ (video.size / 1073741824) | round(2) }} GB</span>
+                                {% elif video.size >= 1048576 %}
+                                    <span>{{ (video.size / 1048576) | round(2) }} MB</span>
+                                {% else %}
+                                    <span>{{ (video.size / 1024) | round(2) }} KB</span>
+                                {% endif %}
+                            {% else %}
+                                <span class="text-light opacity-50">0 MB</span>
+                            {% endif %}
+                        </td>
+                        <td class="py-3 px-3 text-center">
+                            <div class="d-flex justify-content-center gap-3">
+                                <span class="small text-info fw-bold"><i class="fa-solid fa-eye me-1"></i> {{ video.views or 0 }}</span>
+                                <span class="small text-light opacity-75"><i class="fa-solid fa-heart me-1"></i> {{ video.likes or 0 }}</span>
+                                <span class="small text-danger opacity-75"><i class="fa-solid fa-flag me-1"></i> {{ video.bookmarks or 0 }}</span>
+                            </div>
+                        </td>
+                        <td class="py-3 px-3 text-center small text-light opacity-75">
+                            {{ video.createdAt[:10] if video.createdAt else 'N/A' }}
+                        </td>
+                        <td class="py-3 px-3 text-end">
+                            <button class="btn btn-sm btn-outline-danger rounded-circle p-2" title="Delete Video" onclick="deleteSingleVideo({{ video.id }}, '{{ video.title | escape }}')">
+                                <i class="fa-solid fa-trash"></i>
+                            </button>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr id="noVideosRow">
+                        <td colspan="7" class="text-center py-5 text-light opacity-50">
+                            <i class="fa-solid fa-film fs-2 mb-3 d-block text-secondary"></i>
+                            <h5>No videos found</h5>
+                            <p class="small mb-0">No videos uploaded to the platform match the current criteria.</p>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
         </div>
     </div>
 </div>
 
 <script>
-async function deleteVideo(id) {
-    if(!confirm("Are you sure you want to permanently delete this video?")) return;
+function formatBytes(bytes) {
+    if (!bytes || bytes <= 0) return '0 MB';
+    if (bytes >= 1073741824) return (bytes / 1073741824).toFixed(2) + ' GB';
+    if (bytes >= 1048576) return (bytes / 1048576).toFixed(2) + ' MB';
+    if (bytes >= 1024) return (bytes / 1024).toFixed(2) + ' KB';
+    return bytes + ' B';
+}
+
+// Single Video Delete
+async function deleteSingleVideo(id, title) {
+    if (!confirm(`Are you sure you want to permanently delete this video?\n"${title}" (ID: ${id})`)) return;
     try {
         const res = await fetch(`/superadmin/videos/${id}`, {
             method: "DELETE"
         });
-        if(res.ok) {
+        if (res.ok) {
             alert("Video successfully deleted.");
             window.location.reload();
         } else {
             const data = await res.json();
             alert(data.error || "Failed to delete video.");
         }
-    } catch(err) {
+    } catch (err) {
         alert("Server connection failed.");
     }
 }
 
-document.getElementById("searchInput").addEventListener("keyup", function () {
-    const value = this.value.toLowerCase();
-    document.querySelectorAll(".video-row").forEach(el => {
-        const t = el.getAttribute("data-title");
-        const d = el.getAttribute("data-description");
-        el.style.display = (t.includes(value) || d.includes(value)) ? "" : "none";
+// Bulk Selection Management
+function updateBulkToolbar() {
+    const checkboxes = document.querySelectorAll(".video-select-checkbox:checked");
+    const count = checkboxes.length;
+    const bar = document.getElementById("bulkActionBar");
+    const countSpan = document.getElementById("selectedCount");
+    const storageSpan = document.getElementById("selectedStorage");
+
+    if (count > 0) {
+        bar.classList.remove("d-none");
+        countSpan.innerText = count;
+
+        let totalBytes = 0;
+        checkboxes.forEach(cb => {
+            totalBytes += parseInt(cb.dataset.size || "0");
+        });
+        storageSpan.innerText = formatBytes(totalBytes);
+    } else {
+        bar.classList.add("d-none");
+    }
+
+    // Update select-all checkbox state based on visible checkboxes
+    const visibleCheckboxes = Array.from(document.querySelectorAll(".video-row"))
+        .filter(row => row.style.display !== "none")
+        .map(row => row.querySelector(".video-select-checkbox"));
+    
+    const selectAll = document.getElementById("selectAllVideos");
+    if (visibleCheckboxes.length > 0 && visibleCheckboxes.every(cb => cb.checked)) {
+        selectAll.checked = true;
+        selectAll.indeterminate = false;
+    } else if (visibleCheckboxes.some(cb => cb.checked)) {
+        selectAll.checked = false;
+        selectAll.indeterminate = true;
+    } else {
+        selectAll.checked = false;
+        selectAll.indeterminate = false;
+    }
+}
+
+function clearSelections() {
+    document.querySelectorAll(".video-select-checkbox").forEach(cb => cb.checked = false);
+    document.getElementById("selectAllVideos").checked = false;
+    document.getElementById("selectAllVideos").indeterminate = false;
+    updateBulkToolbar();
+}
+
+// Select All visible videos
+document.getElementById("selectAllVideos").addEventListener("change", function() {
+    const isChecked = this.checked;
+    document.querySelectorAll(".video-row").forEach(row => {
+        if (row.style.display !== "none") {
+            const cb = row.querySelector(".video-select-checkbox");
+            if (cb) cb.checked = isChecked;
+        }
     });
+    updateBulkToolbar();
 });
 
+// Row Checkboxes change
+document.getElementById("videoTableBody").addEventListener("change", function(e) {
+    if (e.target.classList.contains("video-select-checkbox")) {
+        updateBulkToolbar();
+    }
+});
+
+// Bulk Delete Action
+async function bulkDeleteSelected() {
+    const checked = Array.from(document.querySelectorAll(".video-select-checkbox:checked"));
+    if (checked.length === 0) return;
+
+    const ids = checked.map(cb => parseInt(cb.value));
+    let totalBytes = 0;
+    checked.forEach(cb => totalBytes += parseInt(cb.dataset.size || "0"));
+
+    const confirmMsg = `Are you sure you want to PERMANENTLY DELETE ${ids.length} selected videos?\nTotal Storage to be freed: ${formatBytes(totalBytes)}\n\nThis action cannot be undone.`;
+    if (!confirm(confirmMsg)) return;
+
+    try {
+        const res = await fetch("/superadmin/videos/bulk-delete", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({ ids: ids })
+        });
+
+        if (res.ok) {
+            const data = await res.json();
+            alert(data.message || `Successfully deleted ${ids.length} videos.`);
+            window.location.reload();
+        } else {
+            const data = await res.json();
+            alert(data.error || "Failed to bulk delete videos.");
+        }
+    } catch (err) {
+        alert("Server connection failed.");
+    }
+}
+
+// Filter Function (Admin + Text Search)
+function filterVideos() {
+    const searchValue = document.getElementById("searchInput").value.toLowerCase().trim();
+    const adminFilterVal = document.getElementById("adminFilter").value;
+
+    let visibleCount = 0;
+    document.querySelectorAll(".video-row").forEach(row => {
+        const title = row.getAttribute("data-title") || "";
+        const desc = row.getAttribute("data-description") || "";
+        const id = row.getAttribute("data-id") || "";
+        const email = row.getAttribute("data-admin-email") || "";
+        const adminId = row.getAttribute("data-admin-id") || "";
+
+        const matchesSearch = !searchValue || 
+            title.includes(searchValue) || 
+            desc.includes(searchValue) || 
+            id.includes(searchValue) || 
+            email.includes(searchValue);
+
+        const matchesAdmin = adminFilterVal === "ALL" || adminId === adminFilterVal;
+
+        if (matchesSearch && matchesAdmin) {
+            row.style.display = "";
+            visibleCount++;
+        } else {
+            row.style.display = "none";
+            // Uncheck hidden rows if needed
+            const cb = row.querySelector(".video-select-checkbox");
+            if (cb) cb.checked = false;
+        }
+    });
+
+    document.getElementById("totalVideosCount").innerText = visibleCount;
+    updateBulkToolbar();
+}
+
+document.getElementById("searchInput").addEventListener("input", filterVideos);
+document.getElementById("adminFilter").addEventListener("change", filterVideos);
+
+// Advanced Sorting
 document.getElementById("sortSelect").addEventListener("change", function() {
     const val = this.value;
     const container = document.getElementById("videoTableBody");
     const items = Array.from(container.getElementsByClassName("video-row"));
-    
+
     items.sort((a, b) => {
-        if (val === 'views') return parseInt(b.dataset.views) - parseInt(a.dataset.views);
-        if (val === 'likes') return parseInt(b.dataset.likes) - parseInt(a.dataset.likes);
-        if (val === 'downloads') return parseInt(b.dataset.downloads) - parseInt(a.dataset.downloads);
-        return parseInt(b.dataset.id) - parseInt(a.dataset.id);
+        if (val === 'views_desc') {
+            return parseInt(b.dataset.views || 0) - parseInt(a.dataset.views || 0);
+        }
+        if (val === 'views_asc') {
+            return parseInt(a.dataset.views || 0) - parseInt(b.dataset.views || 0);
+        }
+        if (val === 'size_desc') {
+            return parseInt(b.dataset.size || 0) - parseInt(a.dataset.size || 0);
+        }
+        if (val === 'size_asc') {
+            return parseInt(a.dataset.size || 0) - parseInt(b.dataset.size || 0);
+        }
+        if (val === 'oldest') {
+            const dateA = new Date(a.dataset.created || 0).getTime() || parseInt(a.dataset.id || 0);
+            const dateB = new Date(b.dataset.created || 0).getTime() || parseInt(b.dataset.id || 0);
+            return dateA - dateB;
+        }
+        // newest (default)
+        const dateA = new Date(a.dataset.created || 0).getTime() || parseInt(a.dataset.id || 0);
+        const dateB = new Date(b.dataset.created || 0).getTime() || parseInt(b.dataset.id || 0);
+        return dateB - dateA;
     });
-    
+
     items.forEach(item => container.appendChild(item));
 });
 </script>

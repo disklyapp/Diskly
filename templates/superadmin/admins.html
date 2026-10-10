@@ -47,26 +47,19 @@
     {% endwith %}
 
     <!-- Bulk Edit Section -->
+    <!-- Bulk Edit Section -->
     <div id="bulkEditSection" class="card bg-dark bg-opacity-50 border-0 rounded-4 p-3 mb-4 d-none border border-secondary border-opacity-25">
         <h5 class="fw-bold text-white mb-3"><i class="fa-solid fa-users-gear text-warning me-2"></i>Bulk Edit Selected Admins</h5>
         <div class="row g-3 align-items-end">
-            <div class="col-md-3">
-                <label class="form-label small text-light opacity-75">Daily Upload Limit</label>
-                <input type="number" id="bulkDailyLimit" class="form-control bg-secondary text-white border-0" placeholder="Leave empty to keep current">
+            <div class="col-md-5">
+                <label class="form-label small text-light opacity-75">Max Storage Allowed (GB)</label>
+                <input type="number" step="0.1" id="bulkMaxStorage" class="form-control bg-secondary text-white border-0" placeholder="e.g. 50, 100, 500 (Blank for Unlimited)">
+            </div>
+            <div class="col-md-4">
+                <label class="form-label small text-light opacity-75">Max Per-File Size (MB)</label>
+                <input type="number" id="bulkMaxFileSize" class="form-control bg-secondary text-white border-0" placeholder="e.g. 2000 (Keep current)">
             </div>
             <div class="col-md-3">
-                <label class="form-label small text-light opacity-75">Monthly Upload Limit</label>
-                <input type="number" id="bulkMonthlyLimit" class="form-control bg-secondary text-white border-0" placeholder="Leave empty to keep current">
-            </div>
-            <div class="col-md-2">
-                <label class="form-label small text-light opacity-75">Website Max Size (MB)</label>
-                <input type="number" id="bulkMaxWebsite" class="form-control bg-secondary text-white border-0" placeholder="Keep current">
-            </div>
-            <div class="col-md-2">
-                <label class="form-label small text-light opacity-75">Telegram Max Size (MB)</label>
-                <input type="number" id="bulkMaxTelegram" class="form-control bg-secondary text-white border-0" placeholder="Keep current">
-            </div>
-            <div class="col-md-2">
                 <button onclick="applyBulkLimits()" class="btn btn-warning w-100 py-2 fw-bold rounded-pill">Apply (<span id="selectedCount">0</span>)</button>
             </div>
         </div>
@@ -89,7 +82,7 @@
                         <th class="py-3 px-4 text-uppercase small text-light opacity-75 fw-semibold border-0 text-center">Total Videos</th>
                         <th class="py-3 px-4 text-uppercase small text-light opacity-75 fw-semibold border-0 text-center">Storage Consumed</th>
                         <th class="py-3 px-4 text-uppercase small text-light opacity-75 fw-semibold border-0">Earnings / Balance</th>
-                        <th class="py-3 px-4 text-uppercase small text-light opacity-75 fw-semibold border-0">Limits (Daily/Monthly)</th>
+                        <th class="py-3 px-4 text-uppercase small text-light opacity-75 fw-semibold border-0">Storage Limit & Quota</th>
                         <th class="py-3 px-4 text-uppercase small text-light opacity-75 fw-semibold border-0 text-center">Status</th>
                         <th class="py-3 px-4 text-uppercase small text-light opacity-75 fw-semibold border-0 text-end">Actions</th>
                     </tr>
@@ -124,12 +117,32 @@
                                 <div class="text-white fw-bold">${{ admin.totalEarnings }}</div>
                                 <div class="small text-warning">Bal: ${{ admin.balance }}</div>
                             </td>
-                            <td class="py-3 px-4">
-                                <span class="badge bg-secondary mb-1 d-block text-start" style="font-size: 11px;">{{ admin.dailyUploadLimit if admin.dailyUploadLimit is not none else 'Unlimited' }} Daily</span>
-                                <span class="badge bg-secondary mb-1 d-block text-start" style="font-size: 11px;">{{ admin.monthlyUploadLimit if admin.monthlyUploadLimit is not none else 'Unlimited' }} Monthly</span>
-                                <span class="badge bg-info mb-1 d-block text-start text-dark" style="font-size: 11px;">🌐 Web Max: {{ admin.maxUploadSizeWebsite if admin.maxUploadSizeWebsite is not none else 'Unlimited' }} MB</span>
-                                <span class="badge bg-info mb-1 d-block text-start text-dark" style="font-size: 11px;">✈️ TG Max: {{ admin.maxUploadSizeTelegram if admin.maxUploadSizeTelegram is not none else 'Unlimited' }} MB</span>
-                                <span class="badge bg-primary mb-1 d-block text-start text-white" style="font-size: 11px;">💰 Threshold: {{ admin.minimumPayoutThreshold if admin.minimumPayoutThreshold is not none else 'Unlimited' }} USD</span>
+                            <td class="py-3 px-4" style="min-width: 200px;">
+                                <div class="d-flex justify-content-between align-items-center mb-1">
+                                    <span class="small fw-bold text-white">
+                                        {% if admin.maxStorageGb is not none and admin.maxStorageGb > 0 %}
+                                            Limit: {{ admin.maxStorageGb }} GB
+                                        {% else %}
+                                            Limit: <span class="text-primary-green">Unlimited</span>
+                                        {% endif %}
+                                    </span>
+                                    {% if admin.maxStorageGb is not none and admin.maxStorageGb > 0 %}
+                                        {% set used_gb = admin.totalStorage / 1073741824 %}
+                                        {% set pct = [((used_gb / admin.maxStorageGb) * 100) | round(1), 100] | min %}
+                                        <span class="badge {{ 'bg-danger' if pct >= 90 else 'bg-secondary' }}" style="font-size: 10px;">{{ pct }}%</span>
+                                    {% endif %}
+                                </div>
+                                {% if admin.maxStorageGb is not none and admin.maxStorageGb > 0 %}
+                                    {% set used_gb = admin.totalStorage / 1073741824 %}
+                                    {% set pct = [((used_gb / admin.maxStorageGb) * 100) | round(1), 100] | min %}
+                                    <div class="progress bg-black" style="height: 6px; border-radius: 3px;">
+                                        <div class="progress-bar {{ 'bg-danger' if pct >= 90 else 'bg-warning' if pct >= 75 else 'bg-success' }}" 
+                                             role="progressbar" style="width: {{ pct }}%;" aria-valuenow="{{ pct }}" aria-valuemin="0" aria-valuemax="100"></div>
+                                    </div>
+                                {% endif %}
+                                <div class="small text-light opacity-50 mt-1" style="font-size: 11px;">
+                                    Max file: {{ admin.maxFileSizeMb if admin.maxFileSizeMb is not none else '2000' }} MB
+                                </div>
                             </td>
                             <td class="py-3 px-4 text-center">
                                 {% if admin.isActive %}
@@ -145,10 +158,8 @@
                                             data-email="{{ admin.email }}"
                                             data-name="{{ admin.name or '' }}"
                                             data-balance="{{ admin.balance }}"
-                                            data-daily="{{ admin.dailyUploadLimit if admin.dailyUploadLimit is not none else '' }}"
-                                            data-monthly="{{ admin.monthlyUploadLimit if admin.monthlyUploadLimit is not none else '' }}"
-                                            data-maxwebsite="{{ admin.maxUploadSizeWebsite if admin.maxUploadSizeWebsite is not none else '' }}"
-                                            data-maxtelegram="{{ admin.maxUploadSizeTelegram if admin.maxUploadSizeTelegram is not none else '' }}"
+                                            data-maxstorage="{{ admin.maxStorageGb if admin.maxStorageGb is not none else '' }}"
+                                            data-maxfilesize="{{ admin.maxFileSizeMb if admin.maxFileSizeMb is not none else '' }}"
                                             data-payoutthreshold="{{ admin.minimumPayoutThreshold if admin.minimumPayoutThreshold is not none else '' }}"
                                             data-active="{{ 'true' if admin.isActive else 'false' }}"
                                             onclick="openEditAdminModal(this)">Edit</button>
@@ -195,24 +206,27 @@
                 <label class="form-label">Wallet Balance ($)</label>
                 <input type="number" step="0.000001" id="editAdminBalance" class="form-control bg-secondary text-white border-0" required>
             </div>
-            <div class="row mb-3">
-                <div class="col-md-6">
-                    <label class="form-label">Daily Limit</label>
-                    <input type="number" id="editAdminDaily" class="form-control bg-secondary text-white border-0" placeholder="Unlimited">
+            <div class="mb-3">
+                <label class="form-label d-flex justify-content-between align-items-center">
+                    <span>Maximum Storage Allowed (GB)</span>
+                    <span class="small text-light opacity-50">Leave blank for Unlimited</span>
+                </label>
+                <div class="input-group mb-2">
+                    <input type="number" step="0.1" id="editAdminMaxStorage" class="form-control bg-secondary text-white border-0" placeholder="Unlimited (Default)">
+                    <span class="input-group-text bg-secondary text-white border-0">GB</span>
                 </div>
-                <div class="col-md-6">
-                    <label class="form-label">Monthly Limit</label>
-                    <input type="number" id="editAdminMonthly" class="form-control bg-secondary text-white border-0" placeholder="Unlimited">
+                <div class="d-flex gap-1">
+                    <button type="button" class="btn btn-sm btn-outline-secondary py-0 px-2" onclick="setStoragePreset(50)">50 GB</button>
+                    <button type="button" class="btn btn-sm btn-outline-secondary py-0 px-2" onclick="setStoragePreset(100)">100 GB</button>
+                    <button type="button" class="btn btn-sm btn-outline-secondary py-0 px-2" onclick="setStoragePreset(500)">500 GB</button>
+                    <button type="button" class="btn btn-sm btn-outline-secondary py-0 px-2" onclick="setStoragePreset('')">Unlimited</button>
                 </div>
             </div>
-            <div class="row mb-3">
-                <div class="col-md-6">
-                    <label class="form-label">Website Max Size (MB)</label>
-                    <input type="number" id="editAdminMaxWebsite" class="form-control bg-secondary text-white border-0" placeholder="Global setting default">
-                </div>
-                <div class="col-md-6">
-                    <label class="form-label">Telegram Max Size (MB)</label>
-                    <input type="number" id="editAdminMaxTelegram" class="form-control bg-secondary text-white border-0" placeholder="Global setting default">
+            <div class="mb-3">
+                <label class="form-label">Maximum Per-File Size (MB)</label>
+                <div class="input-group">
+                    <input type="number" id="editAdminMaxFileSize" class="form-control bg-secondary text-white border-0" placeholder="System default (2000 MB)">
+                    <span class="input-group-text bg-secondary text-white border-0">MB</span>
                 </div>
             </div>
             <div class="mb-3">
@@ -236,15 +250,17 @@
 <script>
     let editAdminModalInstance = null;
 
+    function setStoragePreset(val) {
+        document.getElementById("editAdminMaxStorage").value = val;
+    }
+
     function openEditAdminModal(btn) {
         document.getElementById("editAdminId").value = btn.getAttribute("data-id");
         document.getElementById("editAdminEmail").value = btn.getAttribute("data-email");
         document.getElementById("editAdminName").value = btn.getAttribute("data-name") || "";
         document.getElementById("editAdminBalance").value = btn.getAttribute("data-balance");
-        document.getElementById("editAdminDaily").value = btn.getAttribute("data-daily");
-        document.getElementById("editAdminMonthly").value = btn.getAttribute("data-monthly");
-        document.getElementById("editAdminMaxWebsite").value = btn.getAttribute("data-maxwebsite");
-        document.getElementById("editAdminMaxTelegram").value = btn.getAttribute("data-maxtelegram");
+        document.getElementById("editAdminMaxStorage").value = btn.getAttribute("data-maxstorage") || "";
+        document.getElementById("editAdminMaxFileSize").value = btn.getAttribute("data-maxfilesize") || "";
         document.getElementById("editAdminPayoutThreshold").value = btn.getAttribute("data-payoutthreshold");
         document.getElementById("editAdminStatus").value = btn.getAttribute("data-active") === "true" ? "true" : "false";
         
@@ -255,14 +271,14 @@
     document.getElementById("editAdminForm").addEventListener("submit", async function(e) {
         e.preventDefault();
         const id = document.getElementById("editAdminId").value;
+        const maxStorageVal = document.getElementById("editAdminMaxStorage").value.trim();
+        const maxFileSizeVal = document.getElementById("editAdminMaxFileSize").value.trim();
         const payload = {
             email: document.getElementById("editAdminEmail").value.trim(),
             name: document.getElementById("editAdminName").value.trim(),
             balance: parseFloat(document.getElementById("editAdminBalance").value),
-            dailyUploadLimit: document.getElementById("editAdminDaily").value.trim() !== "" ? parseInt(document.getElementById("editAdminDaily").value) : null,
-            monthlyUploadLimit: document.getElementById("editAdminMonthly").value.trim() !== "" ? parseInt(document.getElementById("editAdminMonthly").value) : null,
-            maxUploadSizeWebsite: document.getElementById("editAdminMaxWebsite").value.trim() !== "" ? parseInt(document.getElementById("editAdminMaxWebsite").value) : null,
-            maxUploadSizeTelegram: document.getElementById("editAdminMaxTelegram").value.trim() !== "" ? parseInt(document.getElementById("editAdminMaxTelegram").value) : null,
+            maxStorageGb: maxStorageVal !== "" ? parseFloat(maxStorageVal) : null,
+            maxFileSizeMb: maxFileSizeVal !== "" ? parseInt(maxFileSizeVal) : null,
             minimumPayoutThreshold: document.getElementById("editAdminPayoutThreshold").value.trim() !== "" ? parseFloat(document.getElementById("editAdminPayoutThreshold").value) : null,
             isActive: document.getElementById("editAdminStatus").value === "true"
         };
@@ -560,15 +576,11 @@
             adminIds: adminIds
         };
         
-        const dailyVal = document.getElementById("bulkDailyLimit").value.trim();
-        const monthlyVal = document.getElementById("bulkMonthlyLimit").value.trim();
-        const maxWebVal = document.getElementById("bulkMaxWebsite").value.trim();
-        const maxTgVal = document.getElementById("bulkMaxTelegram").value.trim();
+        const storageVal = document.getElementById("bulkMaxStorage").value.trim();
+        const maxFileVal = document.getElementById("bulkMaxFileSize").value.trim();
         
-        if (dailyVal !== "") payload.dailyUploadLimit = parseInt(dailyVal);
-        if (monthlyVal !== "") payload.monthlyUploadLimit = parseInt(monthlyVal);
-        if (maxWebVal !== "") payload.maxUploadSizeWebsite = parseInt(maxWebVal);
-        if (maxTgVal !== "") payload.maxUploadSizeTelegram = parseInt(maxTgVal);
+        if (storageVal !== "") payload.maxStorageGb = parseFloat(storageVal);
+        if (maxFileVal !== "") payload.maxFileSizeMb = parseInt(maxFileVal);
         
         if (Object.keys(payload).length <= 1) {
             alert("Please fill out at least one limit field to update.");

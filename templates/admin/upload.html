@@ -207,13 +207,23 @@
             });
             if (res.ok) {
                 const data = await res.json();
-                if (data.maxUploadSizeWebsite !== null && data.maxUploadSizeWebsite !== undefined) {
+                if (data.maxFileSizeMb !== null && data.maxFileSizeMb !== undefined) {
+                    maxUploadSizeMb = data.maxFileSizeMb;
+                } else if (data.defaultMaxFileSizeMb !== undefined) {
+                    maxUploadSizeMb = data.defaultMaxFileSizeMb;
+                } else if (data.maxUploadSizeWebsite !== null && data.maxUploadSizeWebsite !== undefined) {
                     maxUploadSizeMb = data.maxUploadSizeWebsite;
-                } else if (data.minimumPayoutThreshold !== undefined) {
-                    // Fallback to setting-provided size limit if account-specific is null
-                    maxUploadSizeMb = data.defaultMaxUploadSizeWebsite || 500;
+                } else {
+                    maxUploadSizeMb = 2000;
                 }
-                document.getElementById('maxSizeDisplay').innerText = `${maxUploadSizeMb} MB`;
+                
+                let storageText = "";
+                if (data.maxStorageGb !== null && data.maxStorageGb !== undefined && data.maxStorageGb > 0) {
+                    const usedGb = ((data.usedStorageBytes || 0) / (1024 * 1024 * 1024)).toFixed(2);
+                    storageText = ` | Storage: ${usedGb} GB / ${data.maxStorageGb} GB`;
+                }
+
+                document.getElementById('maxSizeDisplay').innerText = `${maxUploadSizeMb} MB${storageText}`;
             }
         } catch (err) {
             console.error("Failed to load account limits:", err);
@@ -286,7 +296,13 @@
         submitBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin me-2"></i>Uploading... Please wait';
         progressContainer.classList.remove('d-none');
 
-        const CHUNK_SIZE = 2 * 1024 * 1024; // 2MB chunks
+        // Dynamically scale chunk size for large files (> 1.5 GB) to prevent connection timeouts & server bottlenecks
+        let CHUNK_SIZE = 4 * 1024 * 1024; // 4MB default
+        if (file.size >= 1024 * 1024 * 1024) {
+            CHUNK_SIZE = 16 * 1024 * 1024; // 16MB chunks for files >= 1GB (reduces chunk count by 8x)
+        } else if (file.size >= 200 * 1024 * 1024) {
+            CHUNK_SIZE = 8 * 1024 * 1024; // 8MB chunks for files >= 200MB
+        }
         const totalChunks = Math.ceil(file.size / CHUNK_SIZE);
         let uploadId = "";
 
@@ -357,9 +373,9 @@
                                 }
                             });
 
-                            xhr.addEventListener("error", () => reject(new Error("Network error")));
-                            xhr.timeout = 60000; // 60 seconds timeout
-                            xhr.addEventListener("timeout", () => reject(new Error("Request timeout")));
+                            xhr.addEventListener("error", () => reject(new Error("Network connection error")));
+                            xhr.timeout = 180000; // 180 seconds timeout for large chunks
+                            xhr.addEventListener("timeout", () => reject(new Error("Chunk upload request timed out")));
                             xhr.send(chunkForm);
                         });
 
@@ -396,7 +412,8 @@
 
             if (!completeRes.ok) {
                 const completeData = await completeRes.json();
-                throw new Error(completeData.error || "Completion failed");
+                const errMsg = completeData.error || completeData.details || "Failed to process video on server";
+                throw new Error(errMsg);
             }
 
             alert("Video uploaded and published successfully!");

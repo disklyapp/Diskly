@@ -141,7 +141,12 @@
         const container = document.getElementById("videoList");
         container.innerHTML = "";
 
-        videos.forEach(video => {
+        if (!videoList || videoList.length === 0) {
+            container.innerHTML = '<div class="col-12 text-center py-5 text-muted"><p>No videos found</p></div>';
+            return;
+        }
+
+        videoList.forEach(video => {
             const html = `
         <div class="col-12 video-item"
             data-title="${(video.title || '').toLowerCase()}"
@@ -149,7 +154,8 @@
             data-views="${video.views || 0}"
             data-likes="${video.likes || 0}"
             data-downloads="${video.bookmarks || 0}"
-            data-id="${video.id}">
+            data-id="${video.id}"
+            data-created="${video.createdAt || ''}">
 
             <div class="custom-nav-container p-2 video-row position-relative"
                 style="border-radius:14px; cursor:pointer;"
@@ -325,20 +331,39 @@
     
     document.getElementById("sortSelect").addEventListener("change", function() {
         const val = this.value;
-        const container = document.getElementById("videoList");
-        const items = Array.from(container.getElementsByClassName("video-item"));
+        const sorted = [...videos];
         
-        items.sort((a, b) => {
-            if (val === 'views') return parseInt(b.dataset.views) - parseInt(a.dataset.views);
-            if (val === 'likes') return parseInt(b.dataset.likes) - parseInt(a.dataset.likes);
-            if (val === 'downloads') return parseInt(b.dataset.downloads) - parseInt(a.dataset.downloads);
-            if (val === 'oldest') return parseInt(a.dataset.id) - parseInt(b.dataset.id);
-            // Default to newest (we use ID as proxy for date here since they are appended in order)
-            return parseInt(b.dataset.id) - parseInt(a.dataset.id);
-        });
+        if (val === 'views') {
+            sorted.sort((a, b) => (b.views || 0) - (a.views || 0));
+        } else if (val === 'likes') {
+            sorted.sort((a, b) => (b.likes || 0) - (a.likes || 0));
+        } else if (val === 'downloads') {
+            sorted.sort((a, b) => (b.bookmarks || 0) - (a.bookmarks || 0));
+        } else if (val === 'oldest') {
+            sorted.sort((a, b) => {
+                const dateA = new Date(a.createdAt || 0).getTime() || a.id;
+                const dateB = new Date(b.createdAt || 0).getTime() || b.id;
+                return dateA - dateB;
+            });
+        } else {
+            // Newest first
+            sorted.sort((a, b) => {
+                const dateA = new Date(a.createdAt || 0).getTime() || a.id;
+                const dateB = new Date(b.createdAt || 0).getTime() || b.id;
+                return dateB - dateA;
+            });
+        }
         
-        container.innerHTML = "";
-        items.forEach(item => container.appendChild(item));
+        renderVideos(sorted);
+        
+        const searchVal = document.getElementById("searchInput").value.toLowerCase();
+        if (searchVal) {
+            document.querySelectorAll(".video-item").forEach(el => {
+                const t = el.getAttribute("data-title");
+                const d = el.getAttribute("data-description");
+                el.style.display = (t.includes(searchVal) || d.includes(searchVal)) ? "block" : "none";
+            });
+        }
     });
 
     document.getElementById("editForm").addEventListener("submit", async function(e) {
