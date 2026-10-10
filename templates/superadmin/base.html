@@ -14,7 +14,7 @@
         href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 
     <!-- Custom CSS -->
-    <link rel="stylesheet" href="{{ url_for('static',filename='css/style.css') }}?v=1.1">
+    <link rel="stylesheet" href="{{ url_for('static',filename='css/style.css') }}?v=1.2">
     <style>
         .sidebar-section-header {
             font-size: 0.7rem;
@@ -39,6 +39,28 @@
         .sidebar-nav-item .nav-link:hover {
             background: rgba(34, 197, 94, 0.1);
             color: var(--primary-accent) !important;
+        }
+
+        /* Dropdown Option Dark Mode Visibility Fix */
+        [data-theme="dark"] option,
+        [data-theme="dark"] optgroup,
+        [data-theme="dark"] select option,
+        [data-theme="dark"] .form-select option,
+        select.bg-secondary option,
+        select.bg-dark option,
+        select.bg-black option,
+        .form-select.bg-secondary option,
+        .form-select.bg-dark option,
+        .form-select.bg-black option {
+            background-color: #0f2317 !important;
+            color: #f8fafc !important;
+        }
+
+        body:not([data-theme="dark"]) option,
+        body:not([data-theme="dark"]) select option,
+        body:not([data-theme="dark"]) .form-select option {
+            background-color: #ffffff !important;
+            color: #0f172a !important;
         }
     </style>
 </head>
