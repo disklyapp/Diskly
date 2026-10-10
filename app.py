@@ -692,6 +692,7 @@ def superadmin_settings():
             default_storage_val = float(default_storage) if default_storage and default_storage.strip() != "" else None
             default_file_size = request.form.get('defaultMaxFileSizeMb')
             default_file_size_val = int(default_file_size) if default_file_size and default_file_size.strip() != "" else 2000
+            apply_to_all = request.form.get('applyToAllExistingAdmins') in ['true', 'on']
 
             payload = {
                 "earningRatePer1000Views": earning_rate,
@@ -700,7 +701,8 @@ def superadmin_settings():
                 "defaultMaxUploadSizeWebsite": default_max_web,
                 "defaultMaxUploadSizeTelegram": default_max_tg,
                 "defaultMaxStorageGb": default_storage_val,
-                "defaultMaxFileSizeMb": default_file_size_val
+                "defaultMaxFileSizeMb": default_file_size_val,
+                "applyToAllExistingAdmins": apply_to_all
             }
             
             response = requests.put(api_url, headers=headers, json=payload)

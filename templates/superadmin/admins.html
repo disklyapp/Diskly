@@ -103,15 +103,20 @@
                             </td>
                             <td class="py-3 px-4 text-white text-center fw-bold">{{ admin.totalVideos }}</td>
                             <td class="py-3 px-4 text-white text-center fw-bold">
-                                {% if admin.totalStorage >= 1073741824 %}
-                                    {{ (admin.totalStorage / 1073741824) | round(2) }} GB
-                                {% elif admin.totalStorage >= 1048576 %}
-                                    {{ (admin.totalStorage / 1048576) | round(2) }} MB
-                                {% elif admin.totalStorage >= 1024 %}
-                                    {{ (admin.totalStorage / 1024) | round(2) }} KB
-                                {% else %}
-                                    {{ admin.totalStorage }} B
-                                {% endif %}
+                                <div>
+                                    {% if admin.totalStorage >= 1073741824 %}
+                                        {{ (admin.totalStorage / 1073741824) | round(2) }} GB
+                                    {% elif admin.totalStorage >= 1048576 %}
+                                        {{ (admin.totalStorage / 1048576) | round(2) }} MB
+                                    {% elif admin.totalStorage >= 1024 %}
+                                        {{ (admin.totalStorage / 1024) | round(2) }} KB
+                                    {% else %}
+                                        {{ admin.totalStorage }} B
+                                    {% endif %}
+                                    {% if admin.customStorageGb is not none and admin.customStorageGb > 0 %}
+                                        <span class="badge bg-info bg-opacity-25 text-info ms-1" style="font-size: 9px;" title="Manually overridden by Superadmin">Custom</span>
+                                    {% endif %}
+                                </div>
                             </td>
                             <td class="py-3 px-4">
                                 <div class="text-white fw-bold">${{ admin.totalEarnings }}</div>
@@ -159,6 +164,8 @@
                                             data-name="{{ admin.name or '' }}"
                                             data-balance="{{ admin.balance }}"
                                             data-maxstorage="{{ admin.maxStorageGb if admin.maxStorageGb is not none else '' }}"
+                                            data-customstorage="{{ admin.customStorageGb if admin.customStorageGb is not none else '' }}"
+                                            data-actualstorage="{{ (admin.actualVideoStorage / 1073741824) | round(2) if admin.actualVideoStorage is defined else (admin.totalStorage / 1073741824) | round(2) }}"
                                             data-maxfilesize="{{ admin.maxFileSizeMb if admin.maxFileSizeMb is not none else '' }}"
                                             data-payoutthreshold="{{ admin.minimumPayoutThreshold if admin.minimumPayoutThreshold is not none else '' }}"
                                             data-active="{{ 'true' if admin.isActive else 'false' }}"
@@ -207,19 +214,39 @@
                 <input type="number" step="0.000001" id="editAdminBalance" class="form-control bg-secondary text-white border-0" required>
             </div>
             <div class="mb-3">
-                <label class="form-label d-flex justify-content-between align-items-center">
-                    <span>Maximum Storage Allowed (GB)</span>
+                <div class="d-flex justify-content-between align-items-center mb-1">
+                    <label class="form-label mb-0 fw-semibold text-white">Storage Consumed (GB)</label>
+                    <button type="button" class="btn btn-link btn-sm text-info text-decoration-none p-0" style="font-size: 11px;" onclick="resetConsumedStorageToAuto()">
+                        <i class="fa-solid fa-rotate-left me-1"></i>Reset to Auto
+                    </button>
+                </div>
+                <div class="input-group">
+                    <input type="number" step="0.01" id="editAdminStorageConsumed" class="form-control bg-secondary text-white border-0" placeholder="Auto-calculated from uploaded files">
+                    <span class="input-group-text bg-secondary text-white border-0">GB</span>
+                </div>
+                <div class="small text-light opacity-50 mt-1" style="font-size: 11px;">
+                    Superadmin can edit or override consumed storage. Leave blank or click "Reset to Auto" to auto-calculate from uploaded videos.
+                </div>
+            </div>
+            <div class="mb-3">
+                <label class="form-label d-flex justify-content-between align-items-center mb-1">
+                    <span class="fw-semibold text-white">Maximum Storage Limit (GB)</span>
                     <span class="small text-light opacity-50">Leave blank for Unlimited</span>
                 </label>
                 <div class="input-group mb-2">
                     <input type="number" step="0.1" id="editAdminMaxStorage" class="form-control bg-secondary text-white border-0" placeholder="Unlimited (Default)">
                     <span class="input-group-text bg-secondary text-white border-0">GB</span>
                 </div>
-                <div class="d-flex gap-1">
+                <div class="d-flex flex-wrap gap-1">
                     <button type="button" class="btn btn-sm btn-outline-secondary py-0 px-2" onclick="setStoragePreset(50)">50 GB</button>
                     <button type="button" class="btn btn-sm btn-outline-secondary py-0 px-2" onclick="setStoragePreset(100)">100 GB</button>
+                    <button type="button" class="btn btn-sm btn-outline-secondary py-0 px-2" onclick="setStoragePreset(250)">250 GB</button>
                     <button type="button" class="btn btn-sm btn-outline-secondary py-0 px-2" onclick="setStoragePreset(500)">500 GB</button>
+                    <button type="button" class="btn btn-sm btn-outline-secondary py-0 px-2" onclick="setStoragePreset(1000)">1 TB</button>
                     <button type="button" class="btn btn-sm btn-outline-secondary py-0 px-2" onclick="setStoragePreset('')">Unlimited</button>
+                </div>
+                <div class="small text-light opacity-50 mt-1" style="font-size: 11px;">
+                    Superadmin can increase or decrease this limit at any time. When 100% consumed, uploads are immediately blocked.
                 </div>
             </div>
             <div class="mb-3">
@@ -254,11 +281,16 @@
         document.getElementById("editAdminMaxStorage").value = val;
     }
 
+    function resetConsumedStorageToAuto() {
+        document.getElementById("editAdminStorageConsumed").value = "";
+    }
+
     function openEditAdminModal(btn) {
         document.getElementById("editAdminId").value = btn.getAttribute("data-id");
         document.getElementById("editAdminEmail").value = btn.getAttribute("data-email");
         document.getElementById("editAdminName").value = btn.getAttribute("data-name") || "";
         document.getElementById("editAdminBalance").value = btn.getAttribute("data-balance");
+        document.getElementById("editAdminStorageConsumed").value = btn.getAttribute("data-customstorage") || "";
         document.getElementById("editAdminMaxStorage").value = btn.getAttribute("data-maxstorage") || "";
         document.getElementById("editAdminMaxFileSize").value = btn.getAttribute("data-maxfilesize") || "";
         document.getElementById("editAdminPayoutThreshold").value = btn.getAttribute("data-payoutthreshold");
@@ -272,12 +304,14 @@
         e.preventDefault();
         const id = document.getElementById("editAdminId").value;
         const maxStorageVal = document.getElementById("editAdminMaxStorage").value.trim();
+        const storageConsumedVal = document.getElementById("editAdminStorageConsumed").value.trim();
         const maxFileSizeVal = document.getElementById("editAdminMaxFileSize").value.trim();
         const payload = {
             email: document.getElementById("editAdminEmail").value.trim(),
             name: document.getElementById("editAdminName").value.trim(),
             balance: parseFloat(document.getElementById("editAdminBalance").value),
             maxStorageGb: maxStorageVal !== "" ? parseFloat(maxStorageVal) : null,
+            customStorageGb: storageConsumedVal !== "" ? parseFloat(storageConsumedVal) : null,
             maxFileSizeMb: maxFileSizeVal !== "" ? parseInt(maxFileSizeVal) : null,
             minimumPayoutThreshold: document.getElementById("editAdminPayoutThreshold").value.trim() !== "" ? parseFloat(document.getElementById("editAdminPayoutThreshold").value) : null,
             isActive: document.getElementById("editAdminStatus").value === "true"

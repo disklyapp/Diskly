@@ -197,6 +197,8 @@
     const token = "{{ token }}";
     const apiBaseUrl = "{{ api_base_url }}";
     let maxUploadSizeMb = 500; // Default global limit fallback
+    let allowedMaxStorageGb = null;
+    let currentUsedStorageBytes = 0;
 
     async function loadAccountLimits() {
         try {
@@ -216,11 +218,16 @@
                 } else {
                     maxUploadSizeMb = 2000;
                 }
+
+                allowedMaxStorageGb = (data.maxStorageGb !== null && data.maxStorageGb !== undefined && data.maxStorageGb > 0)
+                    ? data.maxStorageGb
+                    : (data.defaultMaxStorageGb !== undefined && data.defaultMaxStorageGb !== null && data.defaultMaxStorageGb > 0 ? data.defaultMaxStorageGb : null);
+                currentUsedStorageBytes = data.usedStorageBytes || 0;
                 
                 let storageText = "";
-                if (data.maxStorageGb !== null && data.maxStorageGb !== undefined && data.maxStorageGb > 0) {
-                    const usedGb = ((data.usedStorageBytes || 0) / (1024 * 1024 * 1024)).toFixed(2);
-                    storageText = ` | Storage: ${usedGb} GB / ${data.maxStorageGb} GB`;
+                if (allowedMaxStorageGb !== null && allowedMaxStorageGb > 0) {
+                    const usedGb = (currentUsedStorageBytes / (1024 * 1024 * 1024)).toFixed(2);
+                    storageText = ` | Storage: ${usedGb} GB / ${allowedMaxStorageGb} GB`;
                 }
 
                 document.getElementById('maxSizeDisplay').innerText = `${maxUploadSizeMb} MB${storageText}`;
@@ -249,6 +256,30 @@
                 uploadBtn.classList.remove('btn-primary-green');
                 uploadBtn.classList.add('btn-secondary');
                 return;
+            }
+
+            if (allowedMaxStorageGb !== null && allowedMaxStorageGb > 0) {
+                const maxStorageBytes = allowedMaxStorageGb * 1024 * 1024 * 1024;
+                const usedGb = (currentUsedStorageBytes / (1024 * 1024 * 1024)).toFixed(2);
+
+                if (currentUsedStorageBytes >= maxStorageBytes) {
+                    alert(`Storage limit reached! Your storage quota is completely full (${usedGb} GB / ${allowedMaxStorageGb} GB). Uploading new videos is disabled.`);
+                    input.value = "";
+                    display.classList.add('d-none');
+                    uploadBtn.classList.remove('btn-primary-green');
+                    uploadBtn.classList.add('btn-secondary');
+                    return;
+                }
+
+                if (currentUsedStorageBytes + file.size > maxStorageBytes) {
+                    const fileGb = (file.size / (1024 * 1024 * 1024)).toFixed(2);
+                    alert(`Storage threshold exceeded! Current used: ${usedGb} GB. Uploading this file (${fileGb} GB) exceeds your quota of ${allowedMaxStorageGb} GB.`);
+                    input.value = "";
+                    display.classList.add('d-none');
+                    uploadBtn.classList.remove('btn-primary-green');
+                    uploadBtn.classList.add('btn-secondary');
+                    return;
+                }
             }
 
             let filename = file.name;
