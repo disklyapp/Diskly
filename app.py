@@ -46,6 +46,10 @@ def page_not_found(e):
 @app.route('/')
 def home():
     return render_template("index.html")
+
+@app.route('/file/<file_id>')
+def view_file(file_id):
+    return render_template('file.html', file_id=file_id)
 @app.route("/app-ads.txt")
 def app_ads():
     return Response(

@@ -193,7 +193,7 @@
                              onclick="event.stopPropagation(); copyDiskly('${video.downloadKey}', this)">
 
                             <div class="small text-white-50 text-truncate pe-2" style="font-size:12px;">
-                                https://diskly.in/${video.downloadKey}
+                                https://diskly.in/file/${video.downloadKey}
                             </div>
 
                             <span class="badge bg-success px-2 py-1" style="font-size:11px;">
@@ -285,7 +285,7 @@
             document.getElementById("detailSize").innerText = "💾 " + formatBytes(v.size || 0);
 
             document.getElementById("copyBtn").onclick = () => {
-                navigator.clipboard.writeText("https://diskly.in/" + v.downloadKey);
+                navigator.clipboard.writeText("https://diskly.in/file/" + v.downloadKey);
                 alert("Copied!");
             };
 
@@ -391,7 +391,7 @@
     });
 
     function copyDiskly(downloadKey, element) {
-        navigator.clipboard.writeText("https://diskly.in/" + downloadKey);
+        navigator.clipboard.writeText("https://diskly.in/file/" + downloadKey);
         const badge = element.querySelector('.badge');
         if (badge) {
             badge.innerText = "Copied!";

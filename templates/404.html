@@ -1,6 +1,6 @@
 {% extends "my_base.html" %}
 
-{% block title %}Open App to Watch Video - Diskly{% endblock %}
+{% block title %}404 - Page Not Found - Diskly{% endblock %}
 
 {% block content %}
 <style>
@@ -20,7 +20,7 @@
         border-radius: 24px;
         padding: 40px;
         width: 100%;
-        max-width: 440px;
+        max-width: 460px;
         text-align: center;
         box-shadow: var(--card-shadow);
         position: relative;
@@ -34,25 +34,38 @@
         left: 0;
         right: 0;
         height: 4px;
-        background: linear-gradient(90deg, var(--secondary-accent), var(--primary-accent));
+        background: linear-gradient(90deg, #ef4444, #f59e0b);
     }
 
-    .icon-wrapper {
-        background: rgba(34, 197, 94, 0.1);
+    .icon-wrapper-404 {
+        background: rgba(239, 68, 68, 0.1);
         width: 80px;
         height: 80px;
         border-radius: 20px;
         display: flex;
         align-items: center;
         justify-content: center;
-        margin: 0 auto 24px;
-        border: 1px solid rgba(34, 197, 94, 0.2);
+        margin: 0 auto 20px;
+        border: 1px solid rgba(239, 68, 68, 0.25);
     }
 
-    .icon-wrapper i {
+    .icon-wrapper-404 i {
         font-size: 36px;
-        color: var(--primary-accent);
-        filter: drop-shadow(0 0 8px rgba(34, 197, 94, 0.4));
+        color: #ef4444;
+        filter: drop-shadow(0 0 8px rgba(239, 68, 68, 0.4));
+    }
+
+    .status-badge {
+        display: inline-block;
+        padding: 4px 14px;
+        background: rgba(239, 68, 68, 0.15);
+        color: #f87171;
+        font-weight: 700;
+        font-size: 13px;
+        letter-spacing: 1.5px;
+        border-radius: 20px;
+        margin-bottom: 12px;
+        border: 1px solid rgba(239, 68, 68, 0.3);
     }
 
     .error-title {
@@ -66,9 +79,10 @@
         color: var(--text-muted);
         font-size: 15px;
         margin-bottom: 30px;
+        line-height: 1.5;
     }
 
-    .btn-app {
+    .btn-home {
         background: linear-gradient(135deg, var(--primary-accent) 0%, var(--secondary-accent) 100%);
         color: #000 !important;
         border: none;
@@ -86,7 +100,7 @@
         box-shadow: 0 8px 20px rgba(34, 197, 94, 0.3);
     }
 
-    .btn-app:hover {
+    .btn-home:hover {
         transform: translateY(-2px);
         box-shadow: 0 10px 25px rgba(34, 197, 94, 0.4);
         color: #000 !important;
@@ -95,7 +109,7 @@
     .divider {
         display: flex;
         align-items: center;
-        margin: 30px 0;
+        margin: 25px 0;
     }
 
     .divider::before,
@@ -113,7 +127,7 @@
         letter-spacing: 1px;
     }
 
-    .btn-store {
+    .btn-secondary-link {
         background: var(--nav-bg);
         color: var(--text-color) !important;
         border: 1px solid var(--glass-border);
@@ -127,61 +141,37 @@
         gap: 10px;
         text-decoration: none;
         transition: all 0.3s ease;
+        width: 100%;
     }
 
-    .btn-store:hover {
+    .btn-secondary-link:hover {
         background: var(--glass-bg);
         border-color: var(--primary-accent);
         transform: translateY(-2px);
-    }
-
-    .security-note {
-        margin-top: 35px;
-        font-size: 13px;
-        color: var(--text-muted);
-    }
-
-    .security-note a {
-        color: var(--text-color);
-        text-decoration: none;
-        transition: color 0.3s ease;
-    }
-
-    .security-note a:hover {
-        color: var(--primary-accent);
     }
 </style>
 
 <div class="container not-found-container mt-5">
     <div class="glass-card">
-        <div class="icon-wrapper">
-            <i class="fa-solid fa-file-video"></i>
+        <div class="icon-wrapper-404">
+            <i class="fa-solid fa-triangle-exclamation"></i>
         </div>
 
-        <h1 class="error-title">Private Video Link</h1>
-        <p class="error-desc">This file can be viewed only in Diskly App. Please Click on Button to Open App</p>
+        <div class="status-badge">404 ERROR</div>
+        <h1 class="error-title">Page Not Found</h1>
+        <p class="error-desc">The link you followed doesn't exist, has been removed, or is not a valid video link.</p>
 
-        <a href="intent://diskly.in{{ request.path }}#Intent;scheme=https;package=com.starwish.diskly;end"
-            class="btn-app">
-            <i class="fa-solid fa-mobile-screen"></i> Open in Diskly App
+        <a href="/" class="btn-home">
+            <i class="fa-solid fa-house"></i> Go to Homepage
         </a>
 
         <div class="divider">
-            <span>OR DOWNLOAD APP</span>
+            <span>OR</span>
         </div>
 
-        <div class="d-flex justify-content-center gap-3 flex-wrap">
-            <a href="/app" class="btn-store">
-                <i class="fa-brands fa-google-play"></i> Google Play
-            </a>
-            <a href="#" class="btn-store ios-download-btn">
-                <i class="fa-brands fa-apple"></i> App Store
-            </a>
-        </div>
-
-        <div class="security-note">
-            <a href="/why-choose-us">Learn more about Diskly Security</a>
-        </div>
+        <a href="/app" class="btn-secondary-link">
+            <i class="fa-brands fa-google-play"></i> Download Diskly App
+        </a>
     </div>
 </div>
 {% endblock %}
