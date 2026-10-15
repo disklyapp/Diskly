@@ -2,10 +2,10 @@
 
 {% block content %}
 <div class="container-fluid py-4">
-    <div class="d-flex justify-content-between align-items-center mb-4">
+    <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
         <div>
-            <h2 class="fw-bold text-white mb-1">Send Notifications</h2>
-            <p class="text-light opacity-75 small mb-0">Broadcast push notifications to all app users</p>
+            <h2 class="fw-bold text-white mb-1"><i class="fa-solid fa-bell text-warning me-2"></i>Notifications & App Popups</h2>
+            <p class="text-light opacity-75 small mb-0">Broadcast notifications to all app users and configure the 1:1 Featured Modal Popup</p>
         </div>
     </div>
 
@@ -13,31 +13,136 @@
     {% with messages = get_flashed_messages() %}
         {% if messages %}
             {% for message in messages %}
-                <div class="alert alert-info rounded-4 shadow-sm border-0 mb-4">{{ message }}</div>
+                <div class="alert alert-info rounded-4 shadow-sm border-0 mb-4 d-flex align-items-center">
+                    <i class="fa-solid fa-circle-info me-2 fs-5"></i>
+                    <div>{{ message }}</div>
+                </div>
             {% endfor %}
         {% endif %}
     {% endwith %}
 
+    <!-- Active Featured Notification Spotlight Card -->
+    {% set featured_item = none %}
+    {% if notifications %}
+        {% for item in notifications %}
+            {% if item.isFeatured and not featured_item %}
+                {% set featured_item = item %}
+            {% endif %}
+        {% endfor %}
+    {% endif %}
+
+    <div class="card bg-dark bg-opacity-50 border-0 rounded-4 shadow-sm border border-secondary border-opacity-25 p-4 mb-4">
+        <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-3 border-bottom border-secondary border-opacity-25 pb-3">
+            <div>
+                <span class="badge bg-warning text-dark px-3 py-1.5 rounded-pill fw-bold text-uppercase me-2">
+                    <i class="fa-solid fa-star me-1"></i> 1:1 Featured In-App Popup
+                </span>
+                <span class="text-light opacity-75 small">Only 1 notification is active at any time. When opened in the mobile app, this shows as a 1:1 square modal popup.</span>
+            </div>
+            {% if featured_item %}
+            <form action="/superadmin/notifications/clear-featured" method="POST" class="m-0" onsubmit="return confirm('Remove active featured popup?');">
+                <button type="submit" class="btn btn-outline-danger btn-sm rounded-pill px-3 fw-semibold">
+                    <i class="fa-solid fa-xmark me-1"></i> Clear Active Featured
+                </button>
+            </form>
+            {% endif %}
+        </div>
+
+        {% if featured_item %}
+        <div class="row align-items-center g-3">
+            {% if featured_item.imageUrl %}
+            <div class="col-auto">
+                <div class="position-relative" style="width: 110px; height: 110px;">
+                    <img src="{{ featured_item.imageUrl }}" alt="Featured 1:1 Image" class="w-100 h-100 rounded-3 border border-warning shadow-sm" style="object-fit: cover; aspect-ratio: 1 / 1;">
+                    <span class="position-absolute bottom-0 end-0 badge bg-black bg-opacity-75 text-warning small m-1 px-1.5 py-0.5 rounded">1:1</span>
+                </div>
+            </div>
+            {% else %}
+            <div class="col-auto">
+                <div class="d-flex align-items-center justify-content-center bg-black rounded-3 border border-secondary" style="width: 110px; height: 110px;">
+                    <i class="fa-solid fa-image text-secondary fs-3"></i>
+                </div>
+            </div>
+            {% endif %}
+            <div class="col">
+                <h5 class="text-white fw-bold mb-1 d-flex align-items-center gap-2">
+                    {{ featured_item.title }}
+                    <span class="badge bg-success bg-opacity-25 text-success border border-success border-opacity-50 small">Active Popup</span>
+                </h5>
+                <p class="text-light opacity-75 mb-2 small" style="max-width: 800px;">{{ featured_item.message }}</p>
+                <div class="d-flex flex-wrap align-items-center gap-3 text-secondary small">
+                    <span><i class="fa-regular fa-clock me-1"></i> {{ featured_item.createdAt[:16].replace('T', ' ') if featured_item.createdAt else 'N/A' }}</span>
+                    {% if featured_item.actionUrl %}
+                    <span><i class="fa-solid fa-link me-1"></i> <a href="{{ featured_item.actionUrl }}" target="_blank" class="text-info text-decoration-none">{{ featured_item.actionUrl }}</a></span>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        {% else %}
+        <div class="text-center py-3 text-light opacity-50 small">
+            <i class="fa-regular fa-bell-slash fs-4 d-block mb-2"></i>
+            No active featured popup currently set. App users will enter directly without a popup.
+        </div>
+        {% endif %}
+    </div>
+
     <div class="row g-4">
         <!-- Send Form -->
         <div class="col-lg-5">
-            <div class="card bg-dark bg-opacity-50 border-0 rounded-4 shadow-sm border border-secondary border-opacity-25 p-4 p-md-5">
-                <h5 class="fw-bold text-white mb-4"><i class="fa-solid fa-paper-plane text-warning me-2"></i>Create New Broadcast</h5>
+            <div class="card bg-dark bg-opacity-50 border-0 rounded-4 shadow-sm border border-secondary border-opacity-25 p-4 p-md-4">
+                <h5 class="fw-bold text-white mb-3"><i class="fa-solid fa-paper-plane text-warning me-2"></i>Create Notification</h5>
                 
-                <form action="/superadmin/notifications" method="POST">
-                    <div class="mb-4">
-                        <label class="form-label text-light opacity-75 fw-semibold small text-uppercase">Notification Title</label>
-                        <input type="text" name="title" class="form-control bg-black text-white border-secondary rounded-3 py-2.5" placeholder="e.g. System Update Completed" required>
+                <form action="/superadmin/notifications" method="POST" enctype="multipart/form-data">
+                    <div class="mb-3">
+                        <label class="form-label text-light opacity-75 fw-semibold small text-uppercase">Notification Title <span class="text-danger">*</span></label>
+                        <input type="text" name="title" class="form-control bg-black text-white border-secondary rounded-3 py-2.5" placeholder="e.g. Exciting New Release!" required>
                     </div>
 
-                    <div class="mb-4">
-                        <label class="form-label text-light opacity-75 fw-semibold small text-uppercase">Notification Message</label>
-                        <textarea name="message" rows="5" class="form-control bg-black text-white border-secondary rounded-3 py-2.5" placeholder="Enter message description here..." required></textarea>
+                    <div class="mb-3">
+                        <label class="form-label text-light opacity-75 fw-semibold small text-uppercase">Message Description <span class="text-danger">*</span></label>
+                        <textarea name="message" rows="4" class="form-control bg-black text-white border-secondary rounded-3 py-2.5" placeholder="Enter notification message details..." required></textarea>
+                    </div>
+
+                    <!-- 1:1 Image Upload to Backblaze B2 -->
+                    <div class="mb-3">
+                        <label class="form-label text-light opacity-75 fw-semibold small text-uppercase">
+                            <i class="fa-solid fa-cloud-arrow-up text-info me-1"></i> 1:1 Image File (Backblaze B2)
+                        </label>
+                        <input type="file" name="image" id="featuredImageInput" accept="image/png, image/jpeg, image/webp" class="form-control bg-black text-white border-secondary rounded-3">
+                        <div class="form-text text-light opacity-50 small">Recommended: 1:1 square ratio (e.g. 1080x1080). Stored on Backblaze B2. Max 5MB.</div>
+                        
+                        <div id="imagePreviewContainer" class="mt-2" style="display: none;">
+                            <div class="d-flex align-items-center gap-3 bg-black p-2 rounded-3 border border-secondary">
+                                <img id="imagePreview" src="" alt="1:1 Preview" class="rounded-2" style="width: 70px; height: 70px; aspect-ratio: 1; object-fit: cover;">
+                                <div>
+                                    <div class="text-white small fw-semibold">1:1 Square Preview</div>
+                                    <div class="text-success small"><i class="fa-solid fa-check me-1"></i> Ready for upload</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label text-light opacity-75 fw-semibold small text-uppercase">Action URL / Link (Optional)</label>
+                        <input type="url" name="action_url" class="form-control bg-black text-white border-secondary rounded-3 py-2.5" placeholder="https://diskly.in/promo or custom route">
+                    </div>
+
+                    <!-- Set as Featured Checkbox -->
+                    <div class="card bg-black bg-opacity-40 border border-secondary border-opacity-50 rounded-3 p-3 mb-4">
+                        <div class="form-check form-switch mb-1">
+                            <input class="form-check-input" type="checkbox" role="switch" id="isFeaturedSwitch" name="is_featured" value="true" checked>
+                            <label class="form-check-label text-white fw-bold small" for="isFeaturedSwitch">
+                                <i class="fa-solid fa-star text-warning me-1"></i> Set as Active 1:1 Featured Popup
+                            </label>
+                        </div>
+                        <p class="text-light opacity-50 small mb-0 ps-4">
+                            Overrides any existing featured image. Users will see this 1:1 image modal popup immediately when opening the app.
+                        </p>
                     </div>
 
                     <div class="d-grid">
                         <button type="submit" class="btn btn-primary-green btn-lg rounded-pill fw-bold">
-                            <i class="fa-solid fa-bullhorn me-2"></i> Send Notification
+                            <i class="fa-solid fa-bullhorn me-2"></i> Broadcast & Publish
                         </button>
                     </div>
                 </form>
@@ -47,29 +152,74 @@
         <!-- History List -->
         <div class="col-lg-7">
             <div class="card bg-dark bg-opacity-50 border-0 rounded-4 shadow-sm border border-secondary border-opacity-25 p-4">
-                <h5 class="fw-bold text-white mb-4"><i class="fa-solid fa-clock-rotate-left text-info me-2"></i>Recent Notifications History</h5>
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h5 class="fw-bold text-white mb-0"><i class="fa-solid fa-clock-rotate-left text-info me-2"></i>Broadcast History</h5>
+                    <span class="badge bg-secondary bg-opacity-25 text-light small px-3 py-1.5 rounded-pill">{{ notifications|length if notifications else 0 }} Total</span>
+                </div>
                 
-                <div class="table-responsive" style="max-height: 480px; overflow-y: auto;">
+                <div class="table-responsive" style="max-height: 560px; overflow-y: auto;">
                     <table class="table custom-comparison-table table-hover align-middle mb-0">
                         <thead class="border-bottom border-secondary border-opacity-50 position-sticky top-0 bg-dark z-2">
                             <tr>
-                                <th class="py-3 px-3 text-uppercase small text-light opacity-75 fw-semibold border-0" style="width: 25%;">Sent Date</th>
-                                <th class="py-3 px-3 text-uppercase small text-light opacity-75 fw-semibold border-0" style="width: 25%;">Title</th>
-                                <th class="py-3 px-3 text-uppercase small text-light opacity-75 fw-semibold border-0" style="width: 50%;">Message</th>
+                                <th class="py-3 px-3 text-uppercase small text-light opacity-75 fw-semibold border-0" style="width: 15%;">Image</th>
+                                <th class="py-3 px-3 text-uppercase small text-light opacity-75 fw-semibold border-0" style="width: 35%;">Title & Status</th>
+                                <th class="py-3 px-3 text-uppercase small text-light opacity-75 fw-semibold border-0" style="width: 35%;">Message</th>
+                                <th class="py-3 px-3 text-uppercase small text-light opacity-75 fw-semibold border-0 text-end" style="width: 15%;">Actions</th>
                             </tr>
                         </thead>
                         <tbody class="border-top-0">
                             {% if notifications %}
                                 {% for item in notifications %}
                                 <tr>
-                                    <td class="py-3 px-3 text-light opacity-50 small">{{ item.createdAt[:16].replace('T', ' ') if item.createdAt else 'N/A' }}</td>
-                                    <td class="py-3 px-3 text-white fw-semibold">{{ item.title }}</td>
-                                    <td class="py-3 px-3 text-light opacity-75 small">{{ item.message }}</td>
+                                    <td class="py-3 px-3">
+                                        {% if item.imageUrl %}
+                                        <a href="{{ item.imageUrl }}" target="_blank" title="View Full 1:1 Image">
+                                            <img src="{{ item.imageUrl }}" alt="Thumb" class="rounded-2 border border-secondary" style="width: 48px; height: 48px; aspect-ratio: 1; object-fit: cover;">
+                                        </a>
+                                        {% else %}
+                                        <span class="badge bg-secondary bg-opacity-25 text-light opacity-50 px-2 py-1 rounded small">None</span>
+                                        {% endif %}
+                                    </td>
+                                    <td class="py-3 px-3">
+                                        <div class="text-white fw-semibold mb-1">{{ item.title }}</div>
+                                        <div class="d-flex align-items-center gap-2">
+                                            {% if item.isFeatured %}
+                                            <span class="badge bg-warning text-dark px-2 py-0.5 rounded-pill small fw-bold">
+                                                <i class="fa-solid fa-star me-1"></i> Featured
+                                            </span>
+                                            {% endif %}
+                                            <span class="text-light opacity-50 small">{{ item.createdAt[:10] if item.createdAt else '' }}</span>
+                                        </div>
+                                    </td>
+                                    <td class="py-3 px-3">
+                                        <div class="text-light opacity-75 small text-truncate" style="max-width: 250px;">{{ item.message }}</div>
+                                        {% if item.actionUrl %}
+                                        <a href="{{ item.actionUrl }}" target="_blank" class="text-info small text-decoration-none d-block text-truncate" style="max-width: 250px;">
+                                            <i class="fa-solid fa-link me-1"></i>{{ item.actionUrl }}
+                                        </a>
+                                        {% endif %}
+                                    </td>
+                                    <td class="py-3 px-3 text-end">
+                                        <div class="d-inline-flex gap-1">
+                                            {% if not item.isFeatured %}
+                                            <form action="/superadmin/notifications/{{ item.id }}/feature" method="POST" class="d-inline m-0">
+                                                <button type="submit" class="btn btn-outline-warning btn-sm p-1 px-2 rounded-2" title="Set as Featured Popup">
+                                                    <i class="fa-solid fa-star"></i>
+                                                </button>
+                                            </form>
+                                            {% endif %}
+                                            <form action="/superadmin/notifications/{{ item.id }}/delete" method="POST" class="d-inline m-0" onsubmit="return confirm('Delete this notification?');">
+                                                <button type="submit" class="btn btn-outline-danger btn-sm p-1 px-2 rounded-2" title="Delete Notification">
+                                                    <i class="fa-solid fa-trash-can"></i>
+                                                </button>
+                                            </form>
+                                        </div>
+                                    </td>
                                 </tr>
                                 {% endfor %}
                             {% else %}
                                 <tr>
-                                    <td colspan="3" class="text-center py-5 text-light opacity-50">No previous notifications found.</td>
+                                    <td colspan="4" class="text-center py-5 text-light opacity-50">No previous notifications found.</td>
                                 </tr>
                             {% endif %}
                         </tbody>
@@ -79,4 +229,22 @@
         </div>
     </div>
 </div>
+
+<script>
+    document.getElementById('featuredImageInput')?.addEventListener('change', function(e) {
+        const file = e.target.files[0];
+        const previewContainer = document.getElementById('imagePreviewContainer');
+        const preview = document.getElementById('imagePreview');
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = function(evt) {
+                preview.src = evt.target.result;
+                previewContainer.style.display = 'block';
+            };
+            reader.readAsDataURL(file);
+        } else {
+            previewContainer.style.display = 'none';
+        }
+    });
+</script>
 {% endblock %}

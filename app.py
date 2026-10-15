@@ -20,9 +20,22 @@ UPLOAD_FOLDER = 'static/uploads'
 app.secret_key = os.environ.get("FLASK_SECRET_KEY", "pASSWORD11212121")
 
 API_BASE_URL = os.environ.get("API_BASE_URL", "http://localhost:3000").rstrip('/')
+CLIENT_KEY = os.environ.get("DISKLY_CLIENT_KEY", "diskly-secure-client-2026")
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
-app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
+# Ensure all outbound requests carry the trusted client verification header
+_orig_request = requests.Session.request
+def _authenticated_request(self, method, url, *args, **kwargs):
+    headers = kwargs.get('headers')
+    if headers is None:
+        headers = {}
+    elif isinstance(headers, dict):
+        headers = dict(headers)
+    if 'X-Diskly-Client-Key' not in headers:
+        headers['X-Diskly-Client-Key'] = CLIENT_KEY
+    kwargs['headers'] = headers
+    return _orig_request(self, method, url, *args, **kwargs)
+requests.Session.request = _authenticated_request
 
 
 @app.errorhandler(404)
@@ -754,15 +767,34 @@ def superadmin_notifications():
     if request.method == 'POST':
         title = request.form.get('title')
         message = request.form.get('message')
+        action_url = request.form.get('action_url')
+        is_featured = 'true' if request.form.get('is_featured') else 'false'
+        image_file = request.files.get('image')
         
         if not title or not message:
             flash("Title and message are required.")
             return redirect('/superadmin/notifications')
             
         try:
-            res = requests.post(f"{API_BASE_URL}/api/superadmin/notifications", headers=headers, json={"title": title, "message": message})
+            data = {
+                'title': title,
+                'message': message,
+                'isFeatured': is_featured,
+                'actionUrl': action_url or ''
+            }
+            files = None
+            if image_file and image_file.filename:
+                files = {
+                    'image': (image_file.filename, image_file.read(), image_file.content_type)
+                }
+
+            if files:
+                res = requests.post(f"{API_BASE_URL}/api/superadmin/notifications", headers=headers, data=data, files=files)
+            else:
+                res = requests.post(f"{API_BASE_URL}/api/superadmin/notifications", headers=headers, json=data)
+
             if res.status_code == 200:
-                flash("Notification broadcasted successfully.")
+                flash("Notification published & broadcasted successfully!")
             else:
                 try:
                     flash(res.json().get("error", "Failed to send notification."))
@@ -783,6 +815,51 @@ def superadmin_notifications():
         pass
         
     return render_template("superadmin/notifications.html", notifications=notifications_data)
+
+@app.route('/superadmin/notifications/clear-featured', methods=['POST'])
+def superadmin_clear_featured_notification():
+    if 'superadmin_token' not in session:
+        return redirect('/superadmin/login')
+    headers = {"Authorization": f"Bearer {session['superadmin_token']}"}
+    try:
+        res = requests.post(f"{API_BASE_URL}/api/superadmin/notifications/clear-featured", headers=headers)
+        if res.status_code == 200:
+            flash("Active featured notification cleared successfully.")
+        else:
+            flash("Failed to clear featured notification.")
+    except Exception:
+        flash("Server connection failed.")
+    return redirect('/superadmin/notifications')
+
+@app.route('/superadmin/notifications/<int:notif_id>/feature', methods=['POST'])
+def superadmin_set_featured_notification(notif_id):
+    if 'superadmin_token' not in session:
+        return redirect('/superadmin/login')
+    headers = {"Authorization": f"Bearer {session['superadmin_token']}"}
+    try:
+        res = requests.post(f"{API_BASE_URL}/api/superadmin/notifications/{notif_id}/feature", headers=headers)
+        if res.status_code == 200:
+            flash("Notification promoted to active featured popup.")
+        else:
+            flash("Failed to set notification as featured.")
+    except Exception:
+        flash("Server connection failed.")
+    return redirect('/superadmin/notifications')
+
+@app.route('/superadmin/notifications/<int:notif_id>/delete', methods=['POST'])
+def superadmin_delete_notification(notif_id):
+    if 'superadmin_token' not in session:
+        return redirect('/superadmin/login')
+    headers = {"Authorization": f"Bearer {session['superadmin_token']}"}
+    try:
+        res = requests.delete(f"{API_BASE_URL}/api/superadmin/notifications/{notif_id}", headers=headers)
+        if res.status_code == 200:
+            flash("Notification deleted successfully.")
+        else:
+            flash("Failed to delete notification.")
+    except Exception:
+        flash("Server connection failed.")
+    return redirect('/superadmin/notifications')
 
 @app.route('/superadmin/send-payment', methods=['GET', 'POST'])
 def superadmin_send_payment():
